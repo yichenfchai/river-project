@@ -6,8 +6,8 @@ import (
 
 	apperrors "github.com/grand-canal-guardian/pkg/errors"
 	"gorm.io/gorm"
-	"github.com/grand-canal-guardian/services/content-service/internal/model"
-	"github.com/grand-canal-guardian/services/content-service/internal/repository"
+	"github.com/grand-canal-guardian/services/main-service/internal/model"
+	"github.com/grand-canal-guardian/services/main-service/internal/repository"
 )
 
 type PostService struct {

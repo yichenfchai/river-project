@@ -5,8 +5,8 @@ import (
 
 	"github.com/grand-canal-guardian/pkg/auth"
 	"github.com/grand-canal-guardian/pkg/errors"
-	"github.com/grand-canal-guardian/services/user-service/internal/model"
-	"github.com/grand-canal-guardian/services/user-service/internal/repository"
+	"github.com/grand-canal-guardian/services/main-service/internal/model"
+	"github.com/grand-canal-guardian/services/main-service/internal/repository"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )

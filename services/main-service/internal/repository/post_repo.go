@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/grand-canal-guardian/services/content-service/internal/model"
+	"github.com/grand-canal-guardian/services/main-service/internal/model"
 	"gorm.io/gorm"
 )
 

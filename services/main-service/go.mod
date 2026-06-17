@@ -1,4 +1,4 @@
-module github.com/grand-canal-guardian/services/user-service
+module github.com/grand-canal-guardian/services/main-service
 
 go 1.22
 

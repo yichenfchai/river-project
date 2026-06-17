@@ -2,8 +2,5 @@ go 1.22
 
 use (
 	./pkg
-	./services/api-gateway
-	./services/user-service
-	./services/content-service
-	./services/quiz-service
+	./services/main-service
 )

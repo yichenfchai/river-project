@@ -7,8 +7,8 @@ import (
 
 	"github.com/google/uuid"
 	apperrors "github.com/grand-canal-guardian/pkg/errors"
-	"github.com/grand-canal-guardian/services/quiz-service/internal/model"
-	"github.com/grand-canal-guardian/services/quiz-service/internal/repository"
+	"github.com/grand-canal-guardian/services/main-service/internal/model"
+	"github.com/grand-canal-guardian/services/main-service/internal/repository"
 	"github.com/redis/go-redis/v9"
 )
 

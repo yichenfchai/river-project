@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/grand-canal-guardian/services/user-service/internal/model"
+	"github.com/grand-canal-guardian/services/main-service/internal/model"
 	"gorm.io/gorm"
 )
 

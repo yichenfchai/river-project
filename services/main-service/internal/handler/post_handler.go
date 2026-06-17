@@ -6,8 +6,8 @@ import (
 	"github.com/gin-gonic/gin"
 	apperrors "github.com/grand-canal-guardian/pkg/errors"
 	"github.com/grand-canal-guardian/pkg/response"
-	"github.com/grand-canal-guardian/services/content-service/internal/model"
-	"github.com/grand-canal-guardian/services/content-service/internal/service"
+	"github.com/grand-canal-guardian/services/main-service/internal/model"
+	"github.com/grand-canal-guardian/services/main-service/internal/service"
 )
 
 type PostHandler struct {

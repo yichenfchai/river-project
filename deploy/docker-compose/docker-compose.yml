@@ -32,26 +32,11 @@ services:
       timeout: 5s
       retries: 5
 
-  rabbitmq:
-    image: rabbitmq:3.12-management-alpine
-    container_name: gcg-rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    profiles:
-      - full
+  # ---- Phase 2 (未启用) ----
+  # rabbitmq:
+  #   image: rabbitmq:3.12-management-alpine
+  #   profiles: [full]
 
 volumes:
   postgres_data:
   redis_data:
-  rabbitmq_data:
