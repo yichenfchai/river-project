@@ -95,8 +95,10 @@
 
 | Phase | 服务 | 状态 |
 |-------|------|------|
-| Phase 1 | API Gateway, User, Content, Quiz | ✅ 已实现 |
-| Phase 2 | Map, LLM, Vision, Notification | 🚧 规划中 |
+| Phase 1 | main-service (Go 单体) | ✅ 已实现 — 合并 Auth/Users/Posts/Quiz/Admin |
+| Phase 2 | Vision Service (Python) | 🚧 规划中 — YOLO 垃圾分类 |
+| Phase 2 | LLM Service (Python) | 🚧 规划中 — AI 对话/科普 |
+| Phase 2 | Map Service (Go) | 🚧 规划中 — GIS 时空地图 |
 
 ### 2.2 服务间通信
 

@@ -1,7 +1,8 @@
 # 大运河生态与文化保护平台 — 开发者文档
 
-> **Phase 1 实现范围**: pkg/ 公共库 + User/Content/Quiz Service + API Gateway
-> **Phase 2 规划**: LLM/Vision/Map Service + Elasticsearch + K8s + RabbitMQ 异步
+> **架构**: Go 单体 (services/main-service) + Python 旁路 (Vision/LLM Phase 2)
+> **Phase 1**: pkg/ 公共库 + 主服务 (Auth/Users/Posts/Quiz/Admin)
+> **Phase 2**: LLM/Vision Python 服务 + Elasticsearch + K8s + RabbitMQ
 
 > **版本**: v1.0 | **日期**: 2026-06-16
 >
@@ -78,7 +79,7 @@ curl http://localhost:8080/health             # 应返回 ok
 
 ```bash
 # Go 服务示例
-cd services/user-service
+cd services/main-service
 cp .env.example .env
 go run cmd/main.go
 
@@ -270,8 +271,7 @@ grand-canal-guardian/
 
 ## 3. Go 后端开发
 
-> **Phase 1 鉴权架构**: API Gateway 统一校验 JWT → 注入 `X-User-ID` / `X-User-Role` 头 → 下游服务信任内网头。
-> Go 服务通过 `extractUserFromHeader()` 中间件提取，无需各自引入 JWT/Redis 依赖。
+> **鉴权架构**: Auth 中间件直接在进程内校验 JWT，通过 `c.Set("user_id", ...)` 注入 gin.Context。所有 handler 通过 `c.GetString("user_id")` 获取。无需独立 Gateway 进程。
 
 > **★ 工程化规范**: 所有 Go 服务必须复用 `pkg/` 公共库。
 > - 基础框架: [`04-go-engineering-standards.md`](./04-go-engineering-standards.md) — 错误/响应/校验/启动器/事务/gRPC
@@ -287,9 +287,9 @@ grand-canal-guardian/
 
 ```bash
 # 以 user-service 为例
-mkdir -p services/user-service
-cd services/user-service
-go mod init github.com/your-org/grand-canal-guardian/services/user-service
+mkdir -p services/main-service
+cd services/main-service
+go mod init github.com/your-org/grand-canal-guardian/services/main-service
 
 # 安装核心依赖
 go get github.com/gin-gonic/gin
@@ -1676,8 +1676,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          docker build -t gcg-api-gateway services/api-gateway
-          docker build -t gcg-user-service services/user-service
+          docker build -t gcg-api-gateway services/main-service (原 Gateway 逻辑已合并)
+          docker build -t gcg-user-service services/main-service
           # ... 构建所有服务
 ```
 
@@ -1704,7 +1704,7 @@ docker compose restart user-service
 
 ```bash
 # 1. 构建并推送镜像
-docker build -t harbor.example.com/gcg/api-gateway:v1.0.0 services/api-gateway
+docker build -t harbor.example.com/gcg/api-gateway:v1.0.0 services/main-service (原 Gateway 逻辑已合并)
 docker push harbor.example.com/gcg/api-gateway:v1.0.0
 
 # 2. 部署到 K8s
