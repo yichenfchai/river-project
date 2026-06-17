@@ -52,6 +52,32 @@ curl -X POST http://localhost:8080/api/v1/auth/register \
 └── docs/                    架构文档
 ```
 
+├── web/                     Vue 3 前端
+│   ├── src/views/          页面 (Home/Posts/Quiz/Profile/Admin)
+│   ├── src/api/            API 客户端 (auth/posts/quiz/admin)
+│   ├── src/stores/         Pinia 状态 (auth)
+│   └── src/router/         路由 + 守卫
+
+## 开发
+
+```bash
+# 后端
+cp .env.example .env
+make run
+
+# 前端
+cd web
+npm install
+npm run dev       # :3000, 自动代理 API 到 :8080
+```
+
+## 生产构建
+
+```bash
+cd web && npm run build    # 输出到 web/dist/
+cd .. && make run          # Go 直接服务前端静态文件
+```
+
 ## 文档
 
 - [架构设计](docs/01-architecture-design.md)

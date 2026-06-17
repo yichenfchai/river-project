@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -68,6 +69,17 @@ func main() {
 	}, logger)
 
 	engine := application.Engine()
+	// 生产模式: 服务前端静态文件 (Vite build 输出到 web/dist/)
+	engine.Use(func(c *gin.Context) {
+		if c.Request.URL.Path == "/" || (!strings.HasPrefix(c.Request.URL.Path, "/api/") && !strings.HasPrefix(c.Request.URL.Path, "/health")) {
+			c.File("../../web/dist/index.html")
+			c.Abort()
+			return
+		}
+		c.Next()
+	})
+	engine.Static("/assets", "../../web/dist/assets")
+
 	registerRoutes(engine, authH, userH, postH, quizH, authMW)
 	application.RegisterHealth()
 

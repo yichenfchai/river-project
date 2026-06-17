@@ -32,3 +32,7 @@ vendor/
 *.test
 *.out
 *.prof
+
+# Frontend
+node_modules/
+web/dist/
