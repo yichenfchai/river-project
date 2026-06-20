@@ -2,30 +2,26 @@ openapi: "3.0.3"
 info:
   title: 大运河生态与文化保护平台 API
   description: |
-    Grand Canal Guardian — 微服务架构 REST API 规范。
-
-    **Phase 1 (已实现)**: Auth / Users / Posts / Comments / Quiz / Leaderboard / Admin(部分)
-    **Phase 2 (规划中)**: Map / LLM / Vision / WebSocket / Upload / Admin Dashboard
+    Grand Canal Guardian — 模块化单体架构 REST API 规范。
     
-    **鉴权模式**: API Gateway 统一 JWT 校验，注入 X-User-ID / X-User-Role 头到下游服务。
-    
-    **服务清单**:
-    - User Service (8001): 用户认证 & RBAC
-    - Content Service (8002): 分享广场帖子/评论
-    - Map Service (8003): 大运河时空 GIS 地图
-    - Quiz Service (8004): 趣味问答 & 积分排名
-    - LLM Service (8101): AI 对话 & 科普故事 (Python)
-    - Vision Service (8102): YOLO 垃圾分类识别 (Python)
-    - Notification Service (8005): WebSocket 实时推送
+    **模块** (同一进程, /api/v1 前缀):
+    - Auth: 用户认证 & RBAC
+    - Users: 用户管理
+    - Posts: 分享广场帖子/评论
+    - Map: 大运河时空 GIS 地图
+    - Quiz: 趣味问答 & 积分排名
+    - LLM: AI 对话 & 科普故事 (Go 内调用外部 API)
+    - Vision: 垃圾分类识别 (Go 内调用)
+    - Admin: 管理后台
     
     **认证**: JWT Bearer Token
-  version: 1.0.0
+  version: 2.0.0
   contact:
     name: Grand Canal Guardian Team
 
 servers:
   - url: http://localhost:8080/api/v1
-    description: 开发环境 (API Gateway — Phase 1: Auth/Posts/Quiz/Admin)
+    description: 开发环境
   - url: https://api.grandcanal.dev/api/v1
     description: 测试环境
   - url: https://api.grandcanal.com/api/v1
@@ -41,26 +37,19 @@ tags:
   - name: Comments
     description: 评论
   - name: Map
-    description: 🚧 [Phase 2 - 规划中]  大运河时空地图
+    description: 大运河时空地图
   - name: Quiz
     description: 趣味问答
   - name: Leaderboard
     description: 积分排行榜
   - name: LLM
-    description: 🚧 [Phase 2 - 规划中]  AI 对话 & 科普故事
+    description: AI 对话 & 科普故事
   - name: Vision
-    description: 🚧 [Phase 2 - 规划中]  YOLO 垃圾分类识别
+    description: YOLO 垃圾分类识别
   - name: Admin
     description: 管理后台
 
 # ============================================================
-# ============================================================
-# 📌 实现阶段说明
-# ============================================================
-# Phase 1 (已实现): Auth, Users, Posts, Comments, Quiz, Leaderboard, Admin(部分)
-# Phase 2 (规划中): Map, LLM, Vision, WebSocket, Upload, Admin Dashboard
-# ============================================================
-
 # Security
 # ============================================================
 security:
@@ -79,7 +68,7 @@ components:
     Error:
       type: object
       properties:
-        code: { type: integer, example: 10001 }
+        code: { type: integer, example: 40001 }
         message: { type: string, example: "参数校验失败" }
         detail: { type: string }
 
