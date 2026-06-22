@@ -1,73 +1,76 @@
 package errors
 
-// ErrorCode 统一错误码 (5 位: 模块(2) + 分类(1) + 序号(2))
-// 模块: 00=通用 01=用户 02=内容 03=地图 04=问答 05=LLM 06=视觉
-// 分类: 0=系统 1=参数 2=业务 3=权限 4=外部依赖
 type ErrorCode int
 
 const (
-	// ---- 通用 (00) ----
-	ErrInternal       ErrorCode = 10001 // 服务器内部错误
-	ErrBadRequest     ErrorCode = 10002 // 请求参数错误
-	ErrNotFound       ErrorCode = 10003 // 资源不存在
-	ErrConflict       ErrorCode = 10004 // 资源冲突
-	ErrTooManyRequest ErrorCode = 10005 // 请求过于频繁
+	ErrInternal       ErrorCode = 10001
+	ErrBadRequest     ErrorCode = 10002
+	ErrNotFound       ErrorCode = 10003
+	ErrConflict       ErrorCode = 10004
+	ErrTooManyRequest ErrorCode = 10005
 
-	// ---- 认证 (01) ----
-	ErrUnauthorized  ErrorCode = 10101 // 未登录
-	ErrTokenExpired  ErrorCode = 10102 // Token 已过期
-	ErrTokenInvalid  ErrorCode = 10103 // Token 无效
-	ErrForbidden     ErrorCode = 10104 // 无权限
-	ErrPasswordWrong ErrorCode = 10105 // 密码错误
-	ErrUserBanned    ErrorCode = 10106 // 账号已封禁
+	ErrUnauthorized  ErrorCode = 10101
+	ErrTokenExpired  ErrorCode = 10102
+	ErrTokenInvalid  ErrorCode = 10103
+	ErrForbidden     ErrorCode = 10104
+	ErrPasswordWrong ErrorCode = 10105
+	ErrUserBanned    ErrorCode = 10106
 
-	// ---- 用户 (02) ----
-	ErrUserNotFound   ErrorCode = 10201 // 用户不存在
-	ErrUsernameExists ErrorCode = 10202 // 用户名已存在
-	ErrEmailExists    ErrorCode = 10203 // 邮箱已注册
-	ErrInvalidRole    ErrorCode = 10204 // 无效角色
+	ErrUserNotFound   ErrorCode = 10201
+	ErrUsernameExists ErrorCode = 10202
+	ErrEmailExists    ErrorCode = 10203
+	ErrInvalidRole    ErrorCode = 10204
 
-	// ---- 内容 (03) ----
-	ErrPostNotFound     ErrorCode = 10301 // 帖子不存在
-	ErrPostNotOwner     ErrorCode = 10302 // 非帖子作者
-	ErrCommentNotFound  ErrorCode = 10303 // 评论不存在
-	ErrContentSensitive ErrorCode = 10304 // 内容违规
+	ErrPostNotFound     ErrorCode = 10301
+	ErrPostNotOwner     ErrorCode = 10302
+	ErrCommentNotFound  ErrorCode = 10303
+	ErrContentSensitive ErrorCode = 10304
 
-	// ---- 问答 (05) ----
-	ErrQuestionNotFound ErrorCode = 10501 // 题目不存在
-	ErrDuplicateAnswer  ErrorCode = 10502 // 重复提交
-	ErrSessionExpired   ErrorCode = 10503 // 答题会话过期
+	ErrPOINotFound   ErrorCode = 10401
+	ErrRouteNotFound ErrorCode = 10402
 
-	// ---- LLM (06) ----
-	ErrLLMTimeout     ErrorCode = 10601 // LLM 超时
-	ErrLLMRateLimit   ErrorCode = 10602 // LLM 限流
-	ErrLLMUnavailable ErrorCode = 10603 // LLM 服务不可用
+	ErrQuestionNotFound ErrorCode = 10501
+	ErrDuplicateAnswer  ErrorCode = 10502
 
-	// ---- 外部依赖 (08) ----
-	ErrDatabaseError ErrorCode = 10801 // 数据库错误
-	ErrRedisError    ErrorCode = 10802 // Redis 错误
+	ErrLLMTimeout     ErrorCode = 10601
+	ErrLLMRateLimit   ErrorCode = 10602
+	ErrLLMUnavailable ErrorCode = 10603
+
+	ErrImageTooLarge    ErrorCode = 10701
+	ErrImageFormat      ErrorCode = 10702
+	ErrDetectionFailed  ErrorCode = 10703
+
+	ErrItemNotFound        ErrorCode = 10901
+	ErrInsufficientPoints  ErrorCode = 10902
+	ErrOutOfStock          ErrorCode = 10903
+
+	ErrDatabaseError ErrorCode = 10801
+	ErrRedisError    ErrorCode = 10802
+	ErrMinIOError    ErrorCode = 10804
 )
 
-// HTTPStatus 返回对应的 HTTP 状态码
 func (c ErrorCode) HTTPStatus() int {
 	switch {
-	case c == ErrUnauthorized || c == ErrTokenExpired || c == ErrTokenInvalid:
+	case c == ErrBadRequest:
+		return 400
+	case c == ErrConflict:
+		return 409
+	case c >= 10101 && c <= 10103:
 		return 401
 	case c == ErrForbidden || c == ErrPostNotOwner:
 		return 403
-	case c == ErrNotFound || c == ErrUserNotFound ||
-		c == ErrPostNotFound || c == ErrCommentNotFound ||
-		c == ErrQuestionNotFound:
+	case c == ErrNotFound || c == ErrPostNotFound || c == ErrCommentNotFound ||
+		c == ErrUserNotFound || c == ErrPOINotFound || c == ErrRouteNotFound ||
+		c == ErrQuestionNotFound || c == ErrItemNotFound:
 		return 404
-	case c == ErrConflict || c == ErrUsernameExists || c == ErrEmailExists ||
-		c == ErrDuplicateAnswer:
-		return 409
-	case c == ErrTooManyRequest:
+	case c == ErrTooManyRequest || c == ErrDuplicateAnswer:
 		return 429
-	case c == ErrLLMTimeout || c == ErrLLMUnavailable || c == ErrLLMRateLimit:
+	case c == ErrLLMTimeout || c == ErrLLMRateLimit || c == ErrLLMUnavailable:
 		return 503
-	case c == ErrBadRequest:
-		return 400
+	case c == ErrImageTooLarge:
+		return 413
+	case c >= 10801 && c <= 10804:
+		return 500
 	default:
 		return 500
 	}

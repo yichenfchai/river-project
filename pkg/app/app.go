@@ -10,111 +10,95 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/grand-canal-guardian/pkg/errors"
-	"github.com/grand-canal-guardian/pkg/middleware"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
+
+	"github.com/your-org/grand-canal-guardian/pkg/log"
 )
 
-// App 应用启动器
 type App struct {
-	engine *gin.Engine
-	logger *zap.Logger
-	config *Config
+	Engine *gin.Engine
+	Logger *zap.Logger
+	DB     *gorm.DB
+	Config *Config
+	srv    *http.Server
 }
 
-// Config 应用配置
 type Config struct {
+	Name    string
+	Host    string
 	Port    int
-	Mode    string // debug | release
-	Service string // 服务名
+	Mode    string
+	Log     log.Config
 }
 
-// New 创建新的 App 实例
-func New(cfg *Config, logger *zap.Logger) *App {
-	// 设置 Gin 模式
-	gin.SetMode(cfg.Mode)
+func DefaultConfig() Config {
+	return Config{
+		Name: "grand-canal-guardian",
+		Host: "0.0.0.0",
+		Port: 8080,
+		Mode: "release",
+	}
+}
 
-	// 设置错误脱敏模式
-	if cfg.Mode == "release" {
-		errors.SetMode("release")
+func New(cfg Config, db *gorm.DB) (*App, error) {
+	logCfg := cfg.Log
+	if logCfg.Service == "" {
+		logCfg = log.DefaultConfig(cfg.Name)
+	}
+	logger, err := log.New(logCfg)
+	if err != nil {
+		return nil, fmt.Errorf("创建 logger 失败: %w", err)
 	}
 
+	gin.SetMode(cfg.Mode)
 	engine := gin.New()
 
-	// 中间件链 (顺序很重要!)
-	engine.Use(middleware.Recovery(logger))
-	engine.Use(middleware.RequestID())
-	engine.Use(middleware.CORS())
-
-	return &App{
-		engine: engine,
-		logger: logger,
-		config: cfg,
+	app := &App{
+		Engine: engine,
+		Logger: logger,
+		DB:     db,
+		Config: &cfg,
 	}
+
+	return app, nil
 }
 
-// Engine 返回 gin.Engine (供 handler 注册路由)
-func (a *App) Engine() *gin.Engine {
-	return a.engine
-}
-
-// Logger 返回 zap.Logger
-func (a *App) Logger() *zap.Logger {
-	return a.logger
-}
-
-// RegisterHealth 注册健康检查路由
-func (a *App) RegisterHealth() {
-	a.engine.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status":  "ok",
-			"service": a.config.Service,
-		})
-	})
-	a.engine.GET("/ready", func(c *gin.Context) {
-		// TODO: 检查 DB/Redis 连接
-		c.JSON(http.StatusOK, gin.H{"status": "ready"})
-	})
-}
-
-// Run 启动并等待信号优雅关闭
 func (a *App) Run() error {
-	addr := fmt.Sprintf(":%d", a.config.Port)
-
-	srv := &http.Server{
-		Addr:         addr,
-		Handler:      a.engine,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
+	addr := fmt.Sprintf("%s:%d", a.Config.Host, a.Config.Port)
+	a.srv = &http.Server{
+		Addr:    addr,
+		Handler: a.Engine,
 	}
 
-	// 启动服务器
+	a.Logger.Info("服务启动", zap.String("addr", addr))
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
 	go func() {
-		a.logger.Info("server starting",
-			zap.String("service", a.config.Service),
-			zap.String("addr", addr),
-		)
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			a.logger.Fatal("server failed", zap.Error(err))
+		if err := a.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			a.Logger.Fatal("服务异常退出", zap.Error(err))
 		}
 	}()
 
-	// 等待中断信号
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
-
-	a.logger.Info("shutting down server...", zap.String("service", a.config.Service))
+	a.Logger.Info("收到关闭信号，开始优雅关闭...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	if err := srv.Shutdown(ctx); err != nil {
-		a.logger.Fatal("server forced to shutdown", zap.Error(err))
+	if err := a.srv.Shutdown(ctx); err != nil {
+		a.Logger.Error("优雅关闭失败", zap.Error(err))
 		return err
 	}
 
-	a.logger.Info("server exited", zap.String("service", a.config.Service))
+	if a.DB != nil {
+		if sqlDB, err := a.DB.DB(); err == nil {
+			sqlDB.Close()
+		}
+	}
+
+	a.Logger.Info("服务已关闭")
 	return nil
 }

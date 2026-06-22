@@ -1,0 +1,202 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+               'Helvetica Neue', Helvetica, Arial, sans-serif;
+  letter-spacing: 0.3px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #303133;
+  background: #ebe6dc;
+}
+
+/* ── 标题专用衬线字体 ── */
+h1, h2, h3, h4, h5, h6,
+.section-title,
+.login-title,
+.banner-content h1,
+.banner-content h2 {
+  font-family: 'Noto Serif SC', 'STSong', 'SimSun', 'PingFang SC', serif;
+  font-weight: 600;
+}
+
+h1 { letter-spacing: 2px; }
+h2, .section-title, .login-title { letter-spacing: 1px; }
+
+/* ── Banner 大标题专用书法字体 ── */
+.banner-content h1 {
+  font-family: 'Ma Shan Zheng', 'STKaiti', 'KaiTi', 'Noto Serif SC', serif;
+  font-weight: 400;
+  letter-spacing: 6px;
+}
+
+#app {
+  height: 100%;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* ── Element Plus 主题覆盖（水墨风格）── */
+:root {
+  --el-color-primary: #2c3e50;
+  --el-color-primary-light-3: #4a6278;
+  --el-color-primary-light-5: #7a8ea0;
+  --el-color-primary-light-7: #b0bec5;
+  --el-color-primary-light-9: #e0e5e9;
+  --el-color-success: #6b7b6e;
+  --el-color-warning: #8b7355;
+  --el-color-danger: #b84235;
+  --el-border-radius-base: 8px;
+  --el-border-radius-round: 16px;
+}
+
+/* ── 全局卡片基础样式 ── */
+.card-base {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.25s, transform 0.25s;
+}
+
+.card-hover:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
+  transform: translateY(-2px);
+}
+
+/* ── 页面切换过渡 ── */
+.page-fade-enter-active,
+.page-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.page-fade-enter-from,
+.page-fade-leave-to {
+  opacity: 0;
+}
+
+/* ── 按钮立体感 ── */
+.el-button {
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.15s, transform 0.15s, border-color 0.2s, background 0.2s;
+}
+
+.el-button:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.el-button:active {
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0.06);
+  transform: translateY(1px);
+}
+
+.el-button--primary {
+  box-shadow: 0 2px 4px rgba(44, 62, 80, 0.25);
+}
+
+.el-button--primary:hover {
+  box-shadow: 0 3px 10px rgba(44, 62, 80, 0.32);
+}
+
+.el-button--primary:active {
+  box-shadow: 0 1px 2px rgba(44, 62, 80, 0.2);
+  background: #243445;
+  border-color: #243445;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c0c4cc;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Scroll Reveal Animations */
+.reveal {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.8s ease, transform 0.8s ease, visibility 0.8s ease;
+  will-change: transform, opacity;
+}
+
+.reveal-active {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* fade-up */
+.fade-up {
+  transform: translateY(60px);
+}
+.fade-up-active {
+  transform: translateY(0);
+}
+
+/* fade-left */
+.fade-left {
+  transform: translateX(-60px);
+}
+.fade-left-active {
+  transform: translateX(0);
+}
+
+/* fade-right */
+.fade-right {
+  transform: translateX(60px);
+}
+.fade-right-active {
+  transform: translateX(0);
+}
+
+/* zoom-in */
+.zoom-in {
+  transform: scale(0.85);
+}
+.zoom-in-active {
+  transform: scale(1);
+}
+
+/* fade-in */
+.fade-in {
+}
+.fade-in-active {
+}
+
+/* Banner Slider Keyframes */
+@keyframes bannerKenBurns {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.1);
+  }
+}
+
+/* Float animation for icons */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
