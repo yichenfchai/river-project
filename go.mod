@@ -1,4 +1,4 @@
-module github.com/your-org/grand-canal-guardian
+module github.com/yichenfchai/river-project
 
 go 1.26.3
 

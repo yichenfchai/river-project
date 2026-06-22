@@ -3,10 +3,10 @@ package handler
 import (
 	"github.com/gin-gonic/gin"
 
-	"github.com/your-org/grand-canal-guardian/internal/service"
-	"github.com/your-org/grand-canal-guardian/pkg/auth"
-	"github.com/your-org/grand-canal-guardian/pkg/errors"
-	"github.com/your-org/grand-canal-guardian/pkg/response"
+	"github.com/yichenfchai/river-project/internal/service"
+	"github.com/yichenfchai/river-project/pkg/auth"
+	"github.com/yichenfchai/river-project/pkg/errors"
+	"github.com/yichenfchai/river-project/pkg/response"
 )
 
 // toAppError 将 error 统一转为 *errors.AppError（Service 层返回类型即为 *AppError）

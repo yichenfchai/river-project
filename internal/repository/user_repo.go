@@ -6,8 +6,8 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/your-org/grand-canal-guardian/internal/model"
-	apperrors "github.com/your-org/grand-canal-guardian/pkg/errors"
+	"github.com/yichenfchai/river-project/internal/model"
+	apperrors "github.com/yichenfchai/river-project/pkg/errors"
 )
 
 // UserRepository 用户数据访问接口 — 上层只依赖此接口，不感知 GORM

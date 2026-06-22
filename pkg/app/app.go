@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/your-org/grand-canal-guardian/pkg/log"
+	"github.com/yichenfchai/river-project/pkg/log"
 )
 
 type App struct {

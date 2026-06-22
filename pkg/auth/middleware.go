@@ -4,8 +4,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/your-org/grand-canal-guardian/pkg/errors"
-	"github.com/your-org/grand-canal-guardian/pkg/response"
+	"github.com/yichenfchai/river-project/pkg/errors"
+	"github.com/yichenfchai/river-project/pkg/response"
 )
 
 type AuthMiddleware struct {
@@ -42,6 +42,23 @@ func (a *AuthMiddleware) Handler() gin.HandlerFunc {
 		c.Set("user_id", claims.Subject)
 		c.Set("role", claims.Role)
 		c.Set("device_id", claims.DeviceID)
+		c.Next()
+	}
+}
+
+// RequireRole returns middleware that checks the authenticated user has the specified role.
+// Must be placed AFTER AuthMiddleware.Handler() in the chain.
+func RequireRole(roles ...string) gin.HandlerFunc {
+	allowed := make(map[string]bool, len(roles))
+	for _, r := range roles {
+		allowed[r] = true
+	}
+	return func(c *gin.Context) {
+		role := GetRole(c)
+		if role == "" || !allowed[role] {
+			response.AbortWithError(c, errors.NewDefault(errors.ErrForbidden))
+			return
+		}
 		c.Next()
 	}
 }

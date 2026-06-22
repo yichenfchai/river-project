@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/your-org/grand-canal-guardian/pkg/secrets"
+	"github.com/yichenfchai/river-project/pkg/secrets"
 )
 
 type Config struct {
@@ -61,7 +61,7 @@ func Load(s *secrets.Store) Config {
 			Host:            envStr("DB_HOST", "localhost"),
 			Port:            envInt("DB_PORT", 5432),
 			User:            envStr("DB_USER", "postgres"),
-			Password:        s.Get("DB_PASSWORD", "postgres"),
+			Password:        s.Get("DB_PASSWORD", ""),
 			DBName:          envStr("DB_NAME", "grand_canal_db"),
 			SSLMode:         envStr("DB_SSLMODE", "disable"),
 			MaxOpenConns:    envInt("DB_MAX_OPEN_CONNS", 25),
@@ -70,7 +70,7 @@ func Load(s *secrets.Store) Config {
 			ConnMaxIdleTime: envDuration("DB_CONN_MAX_IDLE_TIME", 1*time.Minute),
 		},
 		JWT: JWTConfig{
-			Secret:     s.Get("JWT_SECRET", "change-me-in-production-32-bytes!"),
+			Secret:     s.Get("JWT_SECRET", ""),
 			AccessTTL:  envDuration("JWT_ACCESS_TTL", 15*time.Minute),
 			RefreshTTL: envDuration("JWT_REFRESH_TTL", 7*24*time.Hour),
 		},
