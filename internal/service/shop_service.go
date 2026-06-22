@@ -7,9 +7,9 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/your-org/grand-canal-guardian/internal/model"
-	"github.com/your-org/grand-canal-guardian/internal/repository"
-	apperrors "github.com/your-org/grand-canal-guardian/pkg/errors"
+	"github.com/yichenfchai/river-project/internal/model"
+	"github.com/yichenfchai/river-project/internal/repository"
+	apperrors "github.com/yichenfchai/river-project/pkg/errors"
 )
 
 // ShopService 兑换商店业务逻辑接口

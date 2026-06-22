@@ -13,7 +13,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/your-org/grand-canal-guardian/internal/model"
+	"github.com/yichenfchai/river-project/internal/model"
 )
 
 const canalSpritePrompt = `你是"运河小精灵"，一只生活在京杭大运河畔的千年水精灵。

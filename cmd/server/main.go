@@ -9,22 +9,31 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	appconfig "github.com/your-org/grand-canal-guardian/internal/config"
-	"github.com/your-org/grand-canal-guardian/internal/handler"
-	"github.com/your-org/grand-canal-guardian/internal/model"
-	"github.com/your-org/grand-canal-guardian/internal/repository"
-	"github.com/your-org/grand-canal-guardian/internal/router"
-	"github.com/your-org/grand-canal-guardian/internal/service"
-	"github.com/your-org/grand-canal-guardian/pkg/app"
-	"github.com/your-org/grand-canal-guardian/pkg/auth"
-	"github.com/your-org/grand-canal-guardian/pkg/database"
-	"github.com/your-org/grand-canal-guardian/pkg/errors"
-	"github.com/your-org/grand-canal-guardian/pkg/secrets"
+	appconfig "github.com/yichenfchai/river-project/internal/config"
+	"github.com/yichenfchai/river-project/internal/handler"
+	"github.com/yichenfchai/river-project/internal/model"
+	"github.com/yichenfchai/river-project/internal/repository"
+	"github.com/yichenfchai/river-project/internal/router"
+	"github.com/yichenfchai/river-project/internal/service"
+	"github.com/yichenfchai/river-project/pkg/app"
+	"github.com/yichenfchai/river-project/pkg/auth"
+	"github.com/yichenfchai/river-project/pkg/database"
+	"github.com/yichenfchai/river-project/pkg/errors"
+	"github.com/yichenfchai/river-project/pkg/secrets"
 )
 
 func main() {
 	sec := secrets.New("")
 	cfg := appconfig.Load(sec)
+
+	// 生产环境安全校验
+	if cfg.JWT.Secret == "" {
+		log.Fatal("FATAL: JWT_SECRET is empty. Set it via environment variable or Docker secret.")
+	}
+	if cfg.LLM.APIKey == "" {
+		log.Println("WARN: LLM_API_KEY is empty - LLM features will use offline fallback")
+	}
+
 
 	for _, line := range sec.Summary() {
 		log.Println(line)

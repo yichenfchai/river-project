@@ -8,10 +8,10 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/your-org/grand-canal-guardian/internal/model"
-	"github.com/your-org/grand-canal-guardian/internal/repository"
-	"github.com/your-org/grand-canal-guardian/pkg/auth"
-	apperrors "github.com/your-org/grand-canal-guardian/pkg/errors"
+	"github.com/yichenfchai/river-project/internal/model"
+	"github.com/yichenfchai/river-project/internal/repository"
+	"github.com/yichenfchai/river-project/pkg/auth"
+	apperrors "github.com/yichenfchai/river-project/pkg/errors"
 )
 
 // AuthService 认证业务逻辑接口

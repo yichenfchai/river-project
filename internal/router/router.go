@@ -4,10 +4,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"github.com/your-org/grand-canal-guardian/internal/handler"
-	"github.com/your-org/grand-canal-guardian/internal/middleware"
-	"github.com/your-org/grand-canal-guardian/pkg/auth"
-	pkglog "github.com/your-org/grand-canal-guardian/pkg/log"
+	"github.com/yichenfchai/river-project/internal/handler"
+	"github.com/yichenfchai/river-project/internal/middleware"
+	"github.com/yichenfchai/river-project/pkg/auth"
+	pkglog "github.com/yichenfchai/river-project/pkg/log"
 )
 
 // Dependencies 路由所需的所有依赖（显式注入，无隐式全局状态）
@@ -71,6 +71,7 @@ func Setup(r *gin.Engine, deps Dependencies) {
 
 	// 管理端 — 商品 CRUD
 	adminGroup := r.Group("/api/v1/admin/shop")
+	adminGroup.Use(auth.RequireRole("admin"))
 	{
 		adminGroup.POST("/items", deps.AdminShopHandler.CreateItem)
 		adminGroup.PUT("/items/:id", deps.AdminShopHandler.UpdateItem)

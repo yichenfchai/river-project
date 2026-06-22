@@ -5,9 +5,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/your-org/grand-canal-guardian/internal/service"
-	"github.com/your-org/grand-canal-guardian/pkg/errors"
-	"github.com/your-org/grand-canal-guardian/pkg/response"
+	"github.com/yichenfchai/river-project/internal/service"
+	"github.com/yichenfchai/river-project/pkg/errors"
+	"github.com/yichenfchai/river-project/pkg/response"
 )
 
 type MapHandler struct {

@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/your-org/grand-canal-guardian/internal/repository"
+	"github.com/yichenfchai/river-project/internal/repository"
 )
 
 // MapService 地图服务接口

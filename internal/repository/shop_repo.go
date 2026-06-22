@@ -8,8 +8,8 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"github.com/your-org/grand-canal-guardian/internal/model"
-	apperrors "github.com/your-org/grand-canal-guardian/pkg/errors"
+	"github.com/yichenfchai/river-project/internal/model"
+	apperrors "github.com/yichenfchai/river-project/pkg/errors"
 )
 
 // ShopRepository 兑换商店数据访问接口
