@@ -4,17 +4,15 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/grand-canal-guardian/pkg/errors"
+	"github.com/yichenfchai/river-project/pkg/errors"
 )
 
-// R 统一响应体
 type R struct {
 	Code    int         `json:"code"`
 	Message string      `json:"message"`
 	Data    interface{} `json:"data,omitempty"`
 }
 
-// PageData 分页数据
 type PageData struct {
 	Page       int   `json:"page"`
 	PageSize   int   `json:"page_size"`
@@ -22,13 +20,10 @@ type PageData struct {
 	TotalPages int   `json:"total_pages"`
 }
 
-// List 带分页的列表响应
 type List struct {
 	Items      interface{} `json:"items"`
 	Pagination PageData    `json:"pagination"`
 }
-
-// ---- 成功响应 ----
 
 func OK(c *gin.Context, data interface{}) {
 	c.JSON(http.StatusOK, R{Code: 0, Message: "ok", Data: data})
@@ -40,6 +35,10 @@ func Created(c *gin.Context, data interface{}) {
 
 func NoContent(c *gin.Context) {
 	c.Status(http.StatusNoContent)
+}
+
+func OKMessage(c *gin.Context, message string) {
+	c.JSON(http.StatusOK, R{Code: 0, Message: message})
 }
 
 func OKList(c *gin.Context, items interface{}, page, pageSize int, total int64) {
@@ -56,36 +55,31 @@ func OKList(c *gin.Context, items interface{}, page, pageSize int, total int64) 
 		Data: List{
 			Items: items,
 			Pagination: PageData{
-				Page:       page,
-				PageSize:   pageSize,
-				Total:      total,
-				TotalPages: totalPages,
+				Page: page, PageSize: pageSize, Total: total, TotalPages: totalPages,
 			},
 		},
 	})
 }
 
-func OKMessage(c *gin.Context, message string) {
-	c.JSON(http.StatusOK, R{Code: 0, Message: message})
-}
-
-// ---- 错误响应 ----
-
-// Error 统一错误响应 (所有 handler 唯一的错误出口)
 func Error(c *gin.Context, err *errors.AppError) {
 	status := err.Code.HTTPStatus()
 	body := R{Code: int(err.Code), Message: err.Message}
 
-	// debug 模式: 返回脱敏后的 Detail
-	if errors.Mode == "debug" && err.Detail != "" {
-		body.Data = map[string]interface{}{"detail": err.Detail}
-	}
-
-	// 生产模式: 返回 Safe 分类
-	if errors.Mode == "release" && err.Safe != nil {
-		body.Data = map[string]interface{}{"error_type": err.Safe.Type}
+	switch errors.Mode {
+	case "debug":
+		if err.Detail != "" {
+			body.Data = map[string]interface{}{"detail": err.Detail}
+		}
+	default:
+		if err.Safe != nil {
+			body.Data = map[string]interface{}{"error_type": err.Safe.Type}
+		}
 	}
 
 	c.JSON(status, body)
 	c.Abort()
+}
+
+func AbortWithError(c *gin.Context, err *errors.AppError) {
+	Error(c, err)
 }

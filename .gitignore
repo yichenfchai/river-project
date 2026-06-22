@@ -36,3 +36,6 @@ vendor/
 # Frontend
 node_modules/
 web/dist/
+
+*.zip
+__pycache__/
