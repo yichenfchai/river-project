@@ -2,8 +2,6 @@ package repository
 
 import (
 	"context"
-	"crypto/sha1"
-	"fmt"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -43,16 +41,6 @@ type shopRepo struct {
 
 func NewShopRepo(db *gorm.DB) ShopRepository {
 	return &shopRepo{db: db}
-}
-
-func uuid5(namespace, name string) string {
-	h := sha1.New()
-	h.Write([]byte(namespace + ":" + name))
-	sum := h.Sum(nil)
-	sum[6] = (sum[6] & 0x0f) | 0x50
-	sum[8] = (sum[8] & 0x3f) | 0x80
-	return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x",
-		sum[0:4], sum[4:6], sum[6:8], sum[8:10], sum[10:16])
 }
 
 func (r *shopRepo) ListItems(ctx context.Context) ([]model.ShopItem, error) {
@@ -157,22 +145,22 @@ func (r *shopRepo) Transaction(ctx context.Context, fn func(tx *gorm.DB) error) 
 func (r *shopRepo) Seed(ctx context.Context) error {
 	seeds := []model.ShopItem{
 		{
-			ID: uuid5("grand-canal-shop", "运河守护者称号"),
+			ID: UUID5("grand-canal-shop", "运河守护者称号"),
 			Name: "🏅 运河守护者称号", Description: "解锁专属称号，在排行榜和个人主页中展示",
 			PointsCost: 100, Stock: -1, IsActive: true,
 		},
 		{
-			ID: uuid5("grand-canal-shop", "专属头像框"),
+			ID: UUID5("grand-canal-shop", "专属头像框"),
 			Name: "🎨 专属头像框", Description: "限定时节头像框，彰显运河文化品味",
 			PointsCost: 200, Stock: -1, IsActive: true,
 		},
 		{
-			ID: uuid5("grand-canal-shop", "运河知识手册"),
+			ID: UUID5("grand-canal-shop", "运河知识手册"),
 			Name: "📖 运河知识手册", Description: "解锁隐藏的运河科普故事与冷知识",
 			PointsCost: 50, Stock: -1, IsActive: true,
 		},
 		{
-			ID: uuid5("grand-canal-shop", "抽奖券"),
+			ID: UUID5("grand-canal-shop", "抽奖券"),
 			Name: "🎫 抽奖券", Description: "使用抽奖券获得随机积分奖励（100~500分）",
 			PointsCost: 30, Stock: -1, IsActive: true,
 		},

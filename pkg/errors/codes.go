@@ -25,6 +25,7 @@ const (
 	ErrPostNotOwner     ErrorCode = 10302
 	ErrCommentNotFound  ErrorCode = 10303
 	ErrContentSensitive ErrorCode = 10304
+	ErrStoryNotFound    ErrorCode = 10305
 
 	ErrPOINotFound   ErrorCode = 10401
 	ErrRouteNotFound ErrorCode = 10402
@@ -55,13 +56,15 @@ func (c ErrorCode) HTTPStatus() int {
 		return 400
 	case c == ErrConflict:
 		return 409
-	case c >= 10101 && c <= 10103:
+	case c == ErrUnauthorized || c == ErrTokenExpired || c == ErrTokenInvalid:
+		return 401
+	case c == ErrPasswordWrong || c == ErrUserBanned || c == ErrInvalidRole:
 		return 401
 	case c == ErrForbidden || c == ErrPostNotOwner:
 		return 403
 	case c == ErrNotFound || c == ErrPostNotFound || c == ErrCommentNotFound ||
 		c == ErrUserNotFound || c == ErrPOINotFound || c == ErrRouteNotFound ||
-		c == ErrQuestionNotFound || c == ErrItemNotFound:
+		c == ErrQuestionNotFound || c == ErrItemNotFound || c == ErrStoryNotFound:
 		return 404
 	case c == ErrTooManyRequest || c == ErrDuplicateAnswer:
 		return 429
@@ -69,6 +72,8 @@ func (c ErrorCode) HTTPStatus() int {
 		return 503
 	case c == ErrImageTooLarge:
 		return 413
+	case c == ErrUsernameExists || c == ErrEmailExists:
+		return 409
 	case c >= 10801 && c <= 10804:
 		return 500
 	default:

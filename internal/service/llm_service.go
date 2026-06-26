@@ -9,8 +9,10 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 
 	"github.com/yichenfchai/river-project/internal/model"
@@ -27,6 +29,11 @@ type LLMService interface {
 	Chat(ctx context.Context, input ChatInput, onToken func(token string) error) error
 	GenerateStory(ctx context.Context, input StoryInput) (*StoryOutput, error)
 	Health(ctx context.Context) bool
+	ListSessions(ctx context.Context) ([]SessionInfo, error)
+	GetSessionMessages(ctx context.Context, sessionID string) ([]MessageInfo, error)
+	DeleteSession(ctx context.Context, sessionID string) error
+	ListStories(ctx context.Context) ([]StoryOutput, error)
+	GetStory(ctx context.Context, storyID string) (*StoryOutput, error)
 }
 
 type ChatInput struct {
@@ -40,9 +47,36 @@ type StoryInput struct {
 }
 
 type StoryOutput struct {
+	ID          string `json:"id,omitempty"`
 	Title       string `json:"title"`
 	Content     string `json:"content"`
 	ImagePrompt string `json:"image_prompt,omitempty"`
+	CreatedAt   string `json:"created_at,omitempty"`
+}
+
+type SessionInfo struct {
+	SessionID   string `json:"session_id"`
+	Title       string `json:"title"`
+	LastMessage string `json:"last_message"`
+	UpdatedAt   string `json:"updated_at"`
+}
+
+type MessageInfo struct {
+	Role      string `json:"role"`
+	Content   string `json:"content"`
+	CreatedAt string `json:"created_at"`
+}
+
+type chatMessage struct {
+	Role      string `json:"role"`
+	Content   string `json:"content"`
+	CreatedAt time.Time
+}
+
+type chatSession struct {
+	Title     string
+	Messages  []chatMessage
+	UpdatedAt time.Time
 }
 
 type llmService struct {
@@ -53,6 +87,9 @@ type llmService struct {
 	temperature float64
 	client      *http.Client
 	logger      *zap.Logger
+	sessions    sync.Map
+	stories     []StoryOutput
+	storiesMu   sync.Mutex
 }
 
 type LLMConfig struct {
@@ -83,8 +120,25 @@ func (s *llmService) isConfigured() bool {
 // ---- Chat (SSE streaming) ----
 
 func (s *llmService) Chat(ctx context.Context, input ChatInput, onToken func(token string) error) error {
+	sessionID := input.SessionID
+	if sessionID == "" {
+		sessionID = uuid.New().String()
+	}
+
+	// Store user message
+	s.storeMessage(sessionID, chatMessage{
+		Role:      "user",
+		Content:   input.Message,
+		CreatedAt: time.Now(),
+	})
+
+	var responseBuilder strings.Builder
+
 	if !s.isConfigured() {
-		return s.fallbackChat(input.Message, onToken)
+		return s.fallbackChat(input.Message, func(token string) error {
+			responseBuilder.WriteString(token)
+			return onToken(token)
+		})
 	}
 
 	messages := []map[string]string{
@@ -104,7 +158,10 @@ func (s *llmService) Chat(ctx context.Context, input ChatInput, onToken func(tok
 	req, err := http.NewRequestWithContext(ctx, "POST", s.baseURL+"/chat/completions", bytes.NewReader(reqBody))
 	if err != nil {
 		s.logger.Error("构造LLM请求失败", zap.Error(err))
-		return s.fallbackChat(input.Message, onToken)
+		return s.fallbackChat(input.Message, func(token string) error {
+			responseBuilder.WriteString(token)
+			return onToken(token)
+		})
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+s.apiKey)
@@ -112,16 +169,122 @@ func (s *llmService) Chat(ctx context.Context, input ChatInput, onToken func(tok
 	resp, err := s.client.Do(req)
 	if err != nil {
 		s.logger.Warn("LLM API 不可用，启用降级", zap.Error(err))
-		return s.fallbackChat(input.Message, onToken)
+		return s.fallbackChat(input.Message, func(token string) error {
+			responseBuilder.WriteString(token)
+			return onToken(token)
+		})
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
 		s.logger.Warn("LLM API 返回非200", zap.Int("status", resp.StatusCode))
-		return s.fallbackChat(input.Message, onToken)
+		return s.fallbackChat(input.Message, func(token string) error {
+			responseBuilder.WriteString(token)
+			return onToken(token)
+		})
 	}
 
-	return s.readSSEStream(resp.Body, onToken)
+	err = s.readSSEStream(resp.Body, func(token string) error {
+		responseBuilder.WriteString(token)
+		return onToken(token)
+	})
+
+	// Store assistant response
+	if responseBuilder.Len() > 0 {
+		s.storeMessage(sessionID, chatMessage{
+			Role:      "assistant",
+			Content:   responseBuilder.String(),
+			CreatedAt: time.Now(),
+		})
+	}
+
+	return err
+}
+
+func (s *llmService) storeMessage(sessionID string, msg chatMessage) {
+	val, _ := s.sessions.LoadOrStore(sessionID, &chatSession{
+		Title:     msg.Content,
+		UpdatedAt: time.Now(),
+	})
+	ses := val.(*chatSession)
+	ses.Messages = append(ses.Messages, msg)
+	ses.UpdatedAt = time.Now()
+	// Update title from first user message
+	if len(ses.Messages) == 1 && msg.Role == "user" {
+		title := msg.Content
+		if len([]rune(title)) > 20 {
+			title = string([]rune(title)[:20]) + "..."
+		}
+		ses.Title = title
+	}
+}
+
+func (s *llmService) ListSessions(ctx context.Context) ([]SessionInfo, error) {
+	var result []SessionInfo
+	s.sessions.Range(func(key, val interface{}) bool {
+		sid := key.(string)
+		ses := val.(*chatSession)
+		lastMsg := ""
+		if len(ses.Messages) > 0 {
+			lastMsg = ses.Messages[len(ses.Messages)-1].Content
+			if len([]rune(lastMsg)) > 30 {
+				lastMsg = string([]rune(lastMsg)[:30]) + "..."
+			}
+		}
+		result = append(result, SessionInfo{
+			SessionID: sid, Title: ses.Title,
+			LastMessage: lastMsg, UpdatedAt: ses.UpdatedAt.Format(time.RFC3339),
+		})
+		return true
+	})
+	if result == nil {
+		result = []SessionInfo{}
+	}
+	return result, nil
+}
+
+func (s *llmService) GetSessionMessages(ctx context.Context, sessionID string) ([]MessageInfo, error) {
+	val, ok := s.sessions.Load(sessionID)
+	if !ok {
+		return []MessageInfo{}, nil
+	}
+	ses := val.(*chatSession)
+	result := make([]MessageInfo, len(ses.Messages))
+	for i, m := range ses.Messages {
+		result[i] = MessageInfo{
+			Role:      m.Role,
+			Content:   m.Content,
+			CreatedAt: m.CreatedAt.Format(time.RFC3339),
+		}
+	}
+	return result, nil
+}
+
+func (s *llmService) DeleteSession(ctx context.Context, sessionID string) error {
+	s.sessions.Delete(sessionID)
+	return nil
+}
+
+// ─── Stories ───
+
+func (s *llmService) ListStories(ctx context.Context) ([]StoryOutput, error) {
+	s.storiesMu.Lock()
+	defer s.storiesMu.Unlock()
+	if s.stories == nil {
+		return []StoryOutput{}, nil
+	}
+	return s.stories, nil
+}
+
+func (s *llmService) GetStory(ctx context.Context, storyID string) (*StoryOutput, error) {
+	s.storiesMu.Lock()
+	defer s.storiesMu.Unlock()
+	for _, st := range s.stories {
+		if st.ID == storyID {
+			return &st, nil
+		}
+	}
+	return nil, nil
 }
 
 func (s *llmService) readSSEStream(reader io.Reader, onToken func(token string) error) error {
@@ -170,9 +333,30 @@ func (s *llmService) fallbackChat(_message string, onToken func(token string) er
 // ---- Story Generate ----
 
 func (s *llmService) GenerateStory(ctx context.Context, input StoryInput) (*StoryOutput, error) {
+	var story *StoryOutput
 	if !s.isConfigured() {
-		return s.fallbackStory(input), nil
+		story = s.fallbackStory(input)
+	} else {
+		// ... existing generation logic (unchanged)
+		result, err := s.doGenerateStory(ctx, input)
+		if err != nil || result == nil {
+			story = s.fallbackStory(input)
+		} else {
+			story = result
+		}
 	}
+
+	story.ID = uuid.New().String()
+	story.CreatedAt = time.Now().Format(time.RFC3339)
+
+	s.storiesMu.Lock()
+	s.stories = append(s.stories, *story)
+	s.storiesMu.Unlock()
+
+	return story, nil
+}
+
+func (s *llmService) doGenerateStory(ctx context.Context, input StoryInput) (*StoryOutput, error) {
 
 	topicDescriptions := map[string]string{
 		"history":    "京杭大运河的历史变迁与重大事件",

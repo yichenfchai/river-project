@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ElMenu, ElMenuItem, ElDropdown, ElDropdownMenu, ElDropdownItem, ElIcon, ElSubMenu } from 'element-plus'
-import { DataBoard, Camera, List, User, ArrowDown, SwitchButton, HomeFilled } from '@element-plus/icons-vue'
+import { ElMenu, ElMenuItem, ElDropdown, ElDropdownMenu, ElDropdownItem, ElIcon, ElSubMenu, ElDrawer } from 'element-plus'
+import { DataBoard, Camera, List, User, ArrowDown, SwitchButton, HomeFilled, Expand } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
 const isCollapse = ref(false)
+const mobileMenuOpen = ref(false)
 
 const menuItems = [
   { path: '/monitor/dashboard', name: '数据看板', icon: DataBoard },
@@ -22,6 +23,11 @@ const activePath = computed(() => route.path)
 function handleLogout() {
   auth.logout()
   router.push('/login')
+}
+
+function onMobileNav(path: string) {
+  mobileMenuOpen.value = false
+  router.push(path)
 }
 </script>
 
@@ -59,9 +65,10 @@ function handleLogout() {
     <div class="monitor-right">
       <header class="monitor-topbar">
         <div class="topbar-left">
-          <el-icon class="collapse-btn" @click="isCollapse = !isCollapse" :size="20">
+          <el-icon class="collapse-btn desktop-only" @click="isCollapse = !isCollapse" :size="20">
             <SwitchButton />
           </el-icon>
+          <el-icon class="hamburger-btn" :size="22" @click="mobileMenuOpen = true"><Expand /></el-icon>
           <span class="page-title">监测员工作台</span>
         </div>
 
@@ -82,13 +89,24 @@ function handleLogout() {
       </header>
 
       <main class="monitor-content">
-        <router-view v-slot="{ Component, route }">
-          <transition name="page-fade" mode="out-in">
-            <component :is="Component" :key="route.fullPath" />
-          </transition>
-        </router-view>
+        <router-view />
       </main>
     </div>
+
+    <el-drawer v-model="mobileMenuOpen" direction="ltr" size="70%" :with-header="false">
+      <div class="mobile-nav">
+        <div class="mobile-nav-title">🔬 监测员工作台</div>
+        <div class="mobile-nav-item" v-for="item in menuItems" :key="item.path" @click="onMobileNav(item.path)">
+          <el-icon><component :is="item.icon" /></el-icon>
+          <span>{{ item.name }}</span>
+        </div>
+        <div class="mobile-nav-divider"></div>
+        <div class="mobile-nav-item" @click="onMobileNav('/home')">
+          <el-icon><HomeFilled /></el-icon>
+          <span>返回前台</span>
+        </div>
+      </div>
+    </el-drawer>
   </div>
 </template>
 
@@ -191,6 +209,78 @@ function handleLogout() {
 
 .collapse-btn:hover {
   color: #c9b896;
+}
+
+.hamburger-btn {
+  display: none;
+  cursor: pointer;
+  color: #606266;
+}
+
+.hamburger-btn:hover {
+  color: #c9b896;
+}
+
+.mobile-nav {
+  padding: 12px 0;
+}
+
+.mobile-nav-title {
+  padding: 12px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1d2b3a;
+  border-bottom: 1px solid #ebeef5;
+  margin-bottom: 8px;
+}
+
+.mobile-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  font-size: 15px;
+  color: #303133;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.mobile-nav-item:hover {
+  background: #f5f3ef;
+  color: #2c3e50;
+}
+
+.mobile-nav-divider {
+  height: 1px;
+  background: #ebeef5;
+  margin: 8px 20px;
+}
+
+@media (max-width: 768px) {
+  .monitor-sidebar {
+    display: none;
+  }
+
+  .hamburger-btn {
+    display: inline-flex;
+  }
+
+  .collapse-btn.desktop-only {
+    display: none;
+  }
+
+  .monitor-topbar {
+    padding: 0 12px;
+    height: 50px;
+  }
+
+  .monitor-content {
+    padding: 12px 8px;
+  }
+
+  .user-trigger span {
+    display: none;
+  }
 }
 
 .page-title {

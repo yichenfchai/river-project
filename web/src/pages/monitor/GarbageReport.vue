@@ -1,14 +1,20 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { ElMessage, ElIcon } from 'element-plus'
+import { ElIcon } from 'element-plus'
+import { useMessage } from '@/composables/useMessage'
 import { Camera, Upload, Position } from '@element-plus/icons-vue'
 import { useLocation } from '@/composables/useLocation'
+import { classifyGarbage } from '@/api/modules/vision'
+import type { GarbageDetection } from '@/types'
+
+
+const msg = useMessage()
 
 const { getCurrentPosition } = useLocation()
 
 const previewUrl = ref<string | null>(null)
 const uploading = ref(false)
-const result = ref<{ detections: { class_name: string; category: string; confidence: number }[]; advice: string } | null>(null)
+const result = ref<{ detections: GarbageDetection[]; advice: string } | null>(null)
 const lat = ref<number | null>(null)
 const lng = ref<number | null>(null)
 
@@ -31,19 +37,24 @@ function onFileChange(e: Event) {
 }
 
 async function submitReport() {
+  const fileInput = document.querySelector('.file-input') as HTMLInputElement
+  const file = fileInput?.files?.[0]
+  if (!file) {
+    msg.warning('请先选择图片')
+    return
+  }
+
   result.value = null
   uploading.value = true
   try {
-    await new Promise((r) => setTimeout(r, 1500))
+    const res = await classifyGarbage(file, lat.value ?? undefined, lng.value ?? undefined)
     result.value = {
-      detections: [
-        { class_name: '塑料瓶', category: '可回收物', confidence: 0.96 },
-      ],
-      advice: '塑料瓶属于可回收物，请清洗后投入蓝色垃圾桶',
+      detections: res.data.detections || [],
+      advice: res.data.advice || '',
     }
-    ElMessage.success('识别完成')
+    msg.success('识别完成')
   } catch {
-    ElMessage.error('识别失败，请重试')
+    msg.error('识别失败，请重试')
   } finally {
     uploading.value = false
   }
@@ -52,7 +63,7 @@ async function submitReport() {
 
 <template>
   <div class="report-page">
-    <h2>📷 垃圾分类上报</h2>
+    <h2>垃圾分类上报</h2>
     <p class="page-desc">拍摄或上传垃圾图片进行 AI 识别分类</p>
 
     <div class="report-grid">
@@ -91,10 +102,17 @@ async function submitReport() {
           <el-tag>{{ d.category }}</el-tag>
           <span class="confidence">置信度 {{ (d.confidence * 100).toFixed(0) }}%</span>
         </div>
-        <div class="advice-box">
+        <div v-if="!result.detections.length" class="empty-result">
+          <p>未识别到垃圾类别，请尝试更换图片</p>
+        </div>
+        <div class="advice-box" v-if="result.advice">
           <span class="advice-label">分类建议</span>
           <p>{{ result.advice }}</p>
         </div>
+      </div>
+
+      <div v-else class="result-section empty-hint">
+        <p>拍摄或选择图片后点击"提交识别"查看 AI 分类结果</p>
       </div>
     </div>
   </div>
@@ -229,5 +247,37 @@ async function submitReport() {
   margin: 6px 0 0;
   color: #606266;
   font-size: 14px;
+}
+
+.empty-result {
+  text-align: center;
+  color: #c0c4cc;
+  padding: 20px 0;
+}
+
+.empty-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #c0c4cc;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .report-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .report-page {
+    padding: 0 4px;
+  }
+
+  .capture-area {
+    aspect-ratio: 4/3;
+  }
+
+  .result-section {
+    padding: 16px;
+  }
 }
 </style>

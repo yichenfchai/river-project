@@ -431,7 +431,7 @@ const news = [
 }
 
 .banner-content h1 {
-  font-size: 104px;
+  font-size: clamp(36px, 8vw, 104px);
   font-weight: 700;
   margin: 0 0 8px;
   letter-spacing: 4px;
@@ -439,7 +439,7 @@ const news = [
 }
 
 .banner-content h2 {
-  font-size: 28px;
+  font-size: clamp(16px, 3vw, 28px);
   font-weight: 300;
   margin: 0 0 20px;
   opacity: 0.9;
@@ -447,7 +447,7 @@ const news = [
 }
 
 .banner-content p {
-  font-size: 16px;
+  font-size: clamp(13px, 1.8vw, 16px);
   opacity: 0.75;
   margin: 0 0 36px;
 }
@@ -456,6 +456,11 @@ const news = [
   display: flex;
   gap: 16px;
   justify-content: center;
+  flex-wrap: wrap;
+}
+
+.banner-actions .el-button {
+  white-space: nowrap;
 }
 
 .btn-outline {
@@ -942,17 +947,13 @@ const news = [
     flex-direction: column;
   }
 
+  .banner-overlay {
+    padding: 0 40px;
+  }
+
   .banner-panel {
     left: 24px;
     bottom: 30px;
-  }
-
-  .banner-content h1 {
-    font-size: 56px;
-  }
-
-  .banner-content h2 {
-    font-size: 20px;
   }
 
   .exhibit-section {
@@ -965,13 +966,65 @@ const news = [
     height: 500px;
   }
 
+  .banner-overlay {
+    padding: 0 16px;
+  }
+
+  .banner-content {
+    max-width: 100%;
+  }
+
+  .banner-content h1 {
+    letter-spacing: 2px;
+  }
+
+  .banner-content h2 {
+    letter-spacing: 3px;
+  }
+
+  .banner-content p {
+    margin-bottom: 24px;
+  }
+
+  .banner-actions {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .banner-actions .el-button {
+    width: 100%;
+    max-width: 280px;
+  }
+
   .banner-panel {
     flex-direction: column;
     gap: 8px;
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
   }
 
   .panel-item {
     min-width: auto;
+  }
+
+  .banner-arrow {
+    width: 36px;
+    height: 36px;
+  }
+
+  .banner-arrow.left {
+    left: 8px;
+  }
+
+  .banner-arrow.right {
+    right: 8px;
+  }
+
+  .banner-dots {
+    bottom: 80px;
+    right: 16px;
   }
 
   .cards-grid {
@@ -984,6 +1037,57 @@ const news = [
 
   .exhibit-card {
     height: 200px;
+  }
+
+  .content-row {
+    padding: 40px 16px;
+  }
+
+  .news-left {
+    padding: 20px;
+  }
+
+  .stat-item {
+    padding: 24px 12px;
+  }
+
+  .stat-number {
+    font-size: 28px;
+  }
+}
+
+@media (max-width: 480px) {
+  .banner-section {
+    height: 420px;
+  }
+
+  .banner-arrow {
+    display: none;
+  }
+
+  .banner-panel {
+    display: none;
+  }
+
+  .stats-inner {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .stat-item {
+    padding: 16px 8px;
+  }
+
+  .stat-number {
+    font-size: 24px;
+  }
+
+  .cards-section {
+    padding: 40px 16px;
+  }
+
+  .stats-section {
+    padding: 40px 16px;
   }
 }
 </style>

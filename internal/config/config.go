@@ -11,6 +11,7 @@ import (
 type Config struct {
 	Server   ServerConfig
 	Database DatabaseConfig
+	Redis    RedisConfig
 	JWT      JWTConfig
 	LLM      LLMConfig
 }
@@ -26,9 +27,10 @@ type LLMConfig struct {
 }
 
 type ServerConfig struct {
-	Host string
-	Port int
-	Mode string
+	Host        string
+	Port        int
+	Mode        string
+	CORSOrigins string // 逗号分隔的允许来源列表
 }
 
 type DatabaseConfig struct {
@@ -50,19 +52,26 @@ type JWTConfig struct {
 	RefreshTTL time.Duration
 }
 
+type RedisConfig struct {
+	Addr     string
+	Password string
+	DB       int
+}
+
 func Load(s *secrets.Store) Config {
 	return Config{
 		Server: ServerConfig{
-			Host: envStr("SERVER_HOST", "0.0.0.0"),
-			Port: envInt("SERVER_PORT", 8080),
-			Mode: envStr("SERVER_MODE", "debug"),
+			Host:        envStr("SERVER_HOST", "0.0.0.0"),
+			Port:        envInt("SERVER_PORT", 8080),
+			Mode:        envStr("SERVER_MODE", "debug"),
+			CORSOrigins: envStr("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001"),
 		},
 		Database: DatabaseConfig{
 			Host:            envStr("DB_HOST", "localhost"),
 			Port:            envInt("DB_PORT", 5432),
-			User:            envStr("DB_USER", "postgres"),
+			User:            envStr("DB_USER", "canal"),
 			Password:        s.Get("DB_PASSWORD", ""),
-			DBName:          envStr("DB_NAME", "grand_canal_db"),
+			DBName:          envStr("DB_NAME", "grand_canal"),
 			SSLMode:         envStr("DB_SSLMODE", "disable"),
 			MaxOpenConns:    envInt("DB_MAX_OPEN_CONNS", 25),
 			MaxIdleConns:    envInt("DB_MAX_IDLE_CONNS", 10),
@@ -73,6 +82,11 @@ func Load(s *secrets.Store) Config {
 			Secret:     s.Get("JWT_SECRET", ""),
 			AccessTTL:  envDuration("JWT_ACCESS_TTL", 15*time.Minute),
 			RefreshTTL: envDuration("JWT_REFRESH_TTL", 7*24*time.Hour),
+		},
+		Redis: RedisConfig{
+			Addr:     envStr("REDIS_ADDR", "localhost:6379"),
+			Password: envStr("REDIS_PASSWORD", ""),
+			DB:       envInt("REDIS_DB", 0),
 		},
 		LLM: LLMConfig{
 			Provider:    envStr("LLM_PROVIDER", "openai"),

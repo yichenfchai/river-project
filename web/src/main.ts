@@ -6,6 +6,7 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 
 import App from './App.vue'
 import router from './router'
+import { api } from './api/client'
 import './assets/main.css'
 
 const app = createApp(App)
@@ -17,5 +18,8 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 app.use(createPinia())
 app.use(router)
 app.use(ElementPlus)
+
+// Use soft SPA navigation instead of hard page reload on force logout
+api.setForceLogoutHandler(() => router.push('/login'))
 
 app.mount('#app')

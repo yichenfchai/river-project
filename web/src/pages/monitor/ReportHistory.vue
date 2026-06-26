@@ -1,62 +1,117 @@
 <script setup lang="ts">
-import { ElTable, ElTableColumn, ElTag, ElImage, ElPagination } from 'element-plus'
+import { ref, onMounted } from 'vue'
+import { ElTable, ElTableColumn, ElTag, ElImage, ElPagination, ElEmpty } from 'element-plus'
+import { getMyReports } from '@/api/modules/vision'
+import type { GarbageReport } from '@/types'
+
+const reports = ref<GarbageReport[]>([])
+const loading = ref(true)
+const total = ref(0)
+const page = ref(1)
+const pageSize = ref(10)
+const statusFilter = ref('')
+
+const statusMap: Record<string, { text: string; type: 'success' | 'warning' | 'info' | 'danger' | 'primary' }> = {
+  pending: { text: '待处理', type: 'warning' },
+  verified: { text: '已验证', type: 'success' },
+  dismissed: { text: '已驳回', type: 'info' },
+}
+
+async function loadReports() {
+  loading.value = true
+  try {
+    const params: Record<string, unknown> = { page: page.value, page_size: pageSize.value }
+    if (statusFilter.value) params.category = statusFilter.value
+    const res = await getMyReports(params as any)
+    reports.value = res.data.reports || []
+    total.value = res.data.pagination?.total || 0
+  } catch {
+    reports.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+function handlePageChange(p: number) {
+  page.value = p
+  loadReports()
+}
+
+function handleFilter(status: string) {
+  statusFilter.value = status === 'all' ? '' : status
+  page.value = 1
+  loadReports()
+}
+
+function formatTime(t: string) {
+  if (!t) return ''
+  return new Date(t).toLocaleString('zh-CN')
+}
+
+onMounted(loadReports)
 </script>
 
 <template>
   <div class="history-page">
-    <h2>📋 上报记录</h2>
+    <h2>上报记录</h2>
     <p class="page-desc">查看所有垃圾分类上报历史记录</p>
 
     <div class="filter-bar">
-      <span v-for="f in filters" :key="f.value" class="filter-tag" :class="{ active: f.value === 'all' }">{{ f.label }}</span>
+      <span
+        v-for="f in [{ label: '全部', value: '' }, { label: '已验证', value: 'verified' }, { label: '待处理', value: 'pending' }, { label: '已驳回', value: 'dismissed' }]"
+        :key="f.value"
+        class="filter-tag"
+        :class="{ active: statusFilter === f.value }"
+        @click="handleFilter(f.value)"
+      >{{ f.label }}</span>
     </div>
 
-    <div class="table-wrap">
-      <el-table :data="reports" stripe style="width: 100%">
-        <el-table-column label="图片" width="80">
+    <el-empty v-if="!loading && reports.length === 0" description="暂无上报记录" />
+
+    <div v-else class="table-wrap">
+      <el-table :data="reports" stripe style="width: 100%" v-loading="loading">
+        <el-table-column label="检测类型" width="120">
           <template #default="{ row }">
-            <div class="thumb" :style="{ background: row.bgColor }">{{ row.emoji }}</div>
+            {{ row.detections?.[0]?.class_name || '未知' }}
           </template>
         </el-table-column>
-        <el-table-column prop="type" label="类型" width="100" />
-        <el-table-column prop="category" label="分类" width="100">
+        <el-table-column label="分类" width="100">
           <template #default="{ row }">
-            <el-tag size="small">{{ row.category }}</el-tag>
+            <el-tag size="small">{{ row.detections?.[0]?.category || '未知' }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="location" label="位置" />
-        <el-table-column prop="status" label="状态" width="100">
+        <el-table-column label="位置" min-width="160">
           <template #default="{ row }">
-            <el-tag size="small" :type="row.status === 'verified' ? 'success' : row.status === 'dismissed' ? 'info' : 'warning'">
-              {{ row.status === 'verified' ? '已验证' : row.status === 'dismissed' ? '已驳回' : '待处理' }}
+            <span v-if="row.lat && row.lng">{{ row.lat.toFixed(4) }}, {{ row.lng.toFixed(4) }}</span>
+            <span v-else class="no-loc">—</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" width="100">
+          <template #default="{ row }">
+            <el-tag size="small" :type="statusMap[row.status]?.type || 'info'">
+              {{ statusMap[row.status]?.text || row.status }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="time" label="时间" width="160" />
+        <el-table-column label="时间" width="170">
+          <template #default="{ row }">
+            {{ formatTime(row.reported_at) }}
+          </template>
+        </el-table-column>
       </el-table>
     </div>
 
-    <div class="pagination-wrap">
-      <el-pagination background layout="prev, pager, next" :total="50" />
+    <div v-if="total > pageSize" class="pagination-wrap">
+      <el-pagination
+        background layout="prev, pager, next"
+        :total="total"
+        :page-size="pageSize"
+        :current-page="page"
+        @current-change="handlePageChange"
+      />
     </div>
   </div>
 </template>
-
-<script lang="ts">
-const filters = [
-  { label: '全部', value: 'all' },
-  { label: '已验证', value: 'verified' },
-  { label: '待处理', value: 'pending' },
-  { label: '已驳回', value: 'dismissed' },
-]
-const reports = [
-  { emoji: '🧴', bgColor: '#e6f7ff', type: '塑料瓶', category: '可回收物', location: '扬州市广陵区运河西路', status: 'verified', time: '2026-06-20 14:30' },
-  { emoji: '🛍', bgColor: '#fff7e6', type: '塑料袋', category: '其他垃圾', location: '扬州市邗江区文昌中路', status: 'pending', time: '2026-06-20 13:15' },
-  { emoji: '🔋', bgColor: '#fff1f0', type: '废电池', category: '有害垃圾', location: '扬州市广陵区泰州路', status: 'verified', time: '2026-06-20 11:00' },
-  { emoji: '🍾', bgColor: '#e6f7ff', type: '玻璃瓶', category: '可回收物', location: '扬州市邗江区大学北路', status: 'pending', time: '2026-06-20 10:20' },
-  { emoji: '🥬', bgColor: '#f6ffed', type: '厨余垃圾', category: '厨余垃圾', location: '扬州市广陵区东关街', status: 'verified', time: '2026-06-19 16:45' },
-]
-</script>
 
 <style scoped>
 .history-page {
@@ -89,6 +144,7 @@ const reports = [
   cursor: pointer;
   font-size: 13px;
   transition: all 0.2s;
+  user-select: none;
 }
 
 .filter-tag.active,
@@ -97,26 +153,19 @@ const reports = [
   color: #fff;
 }
 
-.thumb {
-  width: 44px;
-  height: 44px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-}
-
 .table-wrap {
   background: #fff;
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
 .pagination-wrap {
-  margin-top: 20px;
   display: flex;
   justify-content: center;
+  margin-top: 20px;
+}
+
+.no-loc {
+  color: #c0c4cc;
 }
 </style>

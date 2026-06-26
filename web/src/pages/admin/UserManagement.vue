@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElTable, ElTableColumn, ElTag, ElButton, ElPagination, ElInput, ElSelect, ElOption, ElMessageBox, ElMessage } from 'element-plus'
+import { useMessage } from '@/composables/useMessage'
 import { Search } from '@element-plus/icons-vue'
-import { getUsers, updateUserRole, banUser } from '@/api/modules/admin'
+import { getUsers, updateUserRole, banUser, resetUserPassword } from '@/api/modules/admin'
 import type { User, UserRole, Pagination } from '@/types'
+
+
+const msg = useMessage()
 
 const users = ref<User[]>([])
 const pagination = ref<Pagination>({ page: 1, page_size: 10, total: 0, total_pages: 0 })
@@ -28,7 +32,7 @@ async function handleRoleChange(row: User, newRole: UserRole) {
     await ElMessageBox.confirm(`确认将 ${row.nickname || row.username} 的角色改为 ${newRole}？`, '修改角色', { type: 'warning' })
     await updateUserRole(row.id, newRole)
     row.role = newRole
-    ElMessage.success('角色修改成功')
+    msg.success('角色修改成功')
   } catch {
     // cancelled
   }
@@ -38,7 +42,23 @@ async function handleBan(row: User) {
   try {
     await ElMessageBox.prompt('请输入封禁原因', '封禁用户', { type: 'warning', inputPlaceholder: '违反社区规则等' })
     await banUser(row.id, { banned: true, reason: '管理员操作' })
-    ElMessage.success('用户已封禁')
+    msg.success('用户已封禁')
+  } catch {
+    // cancelled
+  }
+}
+
+async function handleResetPassword(row: User) {
+  try {
+    const { value } = await ElMessageBox.prompt('请输入新密码（至少 8 位）', '重置密码', {
+      type: 'warning',
+      inputType: 'password',
+      inputPlaceholder: '新密码',
+      inputValidator: (v: string) => v && v.length >= 8 ? true : '密码至少 8 位',
+    })
+    if (!value) return
+    await resetUserPassword(row.id, value)
+    msg.success(`${row.nickname || row.username} 的密码已重置`)
   } catch {
     // cancelled
   }
@@ -82,6 +102,7 @@ onMounted(() => fetchUsers())
           <template #default="{ row }">
             <el-button size="small" @click="handleRoleChange(row as User, 'user')" :disabled="(row as User).role === 'user'">设为普通用户</el-button>
             <el-button size="small" type="warning" @click="handleRoleChange(row as User, 'monitor')" :disabled="(row as User).role === 'monitor'">设为监测员</el-button>
+            <el-button size="small" type="info" @click="handleResetPassword(row as User)">重置密码</el-button>
             <el-button size="small" type="danger" @click="handleBan(row as User)">封禁</el-button>
           </template>
         </el-table-column>
@@ -133,5 +154,23 @@ onMounted(() => fetchUsers())
   margin-top: 20px;
   display: flex;
   justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .user-management {
+    padding: 0 4px;
+  }
+
+  .search-bar {
+    flex-wrap: wrap;
+  }
+
+  .search-input {
+    width: 100% !important;
+  }
+
+  .search-bar .el-select {
+    width: 100% !important;
+  }
 }
 </style>
