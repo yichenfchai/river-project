@@ -1,0 +1,51 @@
+# GolangCI-lint configuration for Grand Canal Guardian
+# https://golangci-lint.run/usage/configuration/
+
+run:
+  timeout: 5m
+  tests: true
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    - errcheck      # 未检查的 error
+    - gosimple      # 代码简化建议
+    - govet         # Go 官方静态分析
+    - ineffassign   # 无效赋值
+    - staticcheck   # 深度静态分析
+    - unused        # 未使用代码
+    - gofmt         # 格式检查
+    - goimports     # import 排序
+    - misspell      # 拼写检查
+    - unconvert     # 不必要的类型转换
+    - unparam       # 未使用参数
+    - nilerr        # nil error 返回
+    - predeclared   # 预定义标识符覆盖
+
+linters-settings:
+  errcheck:
+    check-blank: false
+    exclude-functions:
+      - (*database/sql.Tx).Rollback
+  goimports:
+    local-prefixes: github.com/yichenfchai/river-project
+  misspell:
+    locale: US
+  unparam:
+    check-exported: false
+
+issues:
+  exclude-rules:
+    # Allow unused parameters in interface implementations and HTTP handlers
+    - path: _test\.go
+      linters:
+        - errcheck
+        - unparam
+    - path: internal/handler/
+      linters:
+        - unparam
+    # Exclude long lines in seed data
+    - path: internal/repository/.*_repo\.go
+      text: "line is [0-9]+ characters"
+  max-issues-per-linter: 0
+  max-same-issues: 0

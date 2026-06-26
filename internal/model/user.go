@@ -11,12 +11,14 @@ type User struct {
 	Username  string         `gorm:"uniqueIndex;size:64;not null" json:"username"`
 	Password  string         `gorm:"size:256;not null" json:"-"`
 	Nickname  string         `gorm:"size:128" json:"nickname"`
-	Email     string         `gorm:"size:256" json:"email"`
+	Email     string         `gorm:"uniqueIndex;size:256" json:"email"`
 	AvatarURL string         `gorm:"size:512" json:"avatar_url"`
 	Role      string         `gorm:"size:32;default:user" json:"role"`
 	Bio       string         `gorm:"size:512" json:"bio"`
 	Points    int            `gorm:"default:0" json:"points"`
 	RankTitle string         `gorm:"size:64" json:"rank_title"`
+	Status    string         `gorm:"size:16;default:active;not null" json:"-"`
+	LastLoginAt *time.Time   `json:"last_login_at,omitempty"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`

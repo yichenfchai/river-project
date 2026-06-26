@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { useMessage } from '@/composables/useMessage'
 import { User, Monitor, Setting, UserFilled } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import type { UserRole } from '@/types'
+
+
+const msg = useMessage()
 
 const router = useRouter()
 const route = useRoute()
@@ -13,6 +16,7 @@ const auth = useAuthStore()
 const activeTab = ref<UserRole>('user')
 const form = ref({ username: '', password: '' })
 const loggingIn = ref(false)
+const showForgotDialog = ref(false)
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur', min: 6 }],
@@ -31,7 +35,7 @@ async function handleLogin() {
   try {
     const user = await auth.login(form.value.username, form.value.password)
     const role = user.role
-    ElMessage.success(`欢迎回来，${user.nickname || user.username}`)
+    msg.success(`欢迎回来，${user.nickname || user.username}`)
     if (role === 'admin') {
       router.push('/admin/dashboard')
     } else if (role === 'monitor') {
@@ -40,7 +44,7 @@ async function handleLogin() {
       router.push('/home')
     }
   } catch {
-    ElMessage.error('用户名或密码错误')
+    // 错误消息已由 API 拦截器处理，此处无需重复提示
   } finally {
     loggingIn.value = false
   }
@@ -48,7 +52,7 @@ async function handleLogin() {
 
 function handleGuestLogin() {
   auth.loginAsGuest()
-  ElMessage.success('已进入游客模式，登录后可解锁全部功能')
+  msg.success('已进入游客模式，登录后可解锁全部功能')
   router.push('/home')
 }
 </script>
@@ -111,6 +115,7 @@ function handleGuestLogin() {
               {{ loggingIn ? '登录中...' : '登  录' }}
             </el-button>
           </el-form-item>
+
           <el-form-item>
             <el-button
               size="large"
@@ -123,13 +128,28 @@ function handleGuestLogin() {
           </el-form-item>
         </el-form>
 
+        <div class="forgot-line">
+          <span class="forgot-hint" @click="showForgotDialog = true">忘记密码？</span>
+        </div>
         <div class="login-footer">
           <span>没有账号？</span>
-          <el-link type="primary" :underline="false">立即注册</el-link>
+          <router-link to="/register" class="register-link">立即注册</router-link>
         </div>
       </el-card>
     </div>
   </div>
+
+  <el-dialog v-model="showForgotDialog" title="找回密码" width="400px" :close-on-click-modal="false">
+    <p style="color: #606266; line-height: 1.8;">
+      请联系<span style="font-weight: 600; color: #303133;">管理员</span>重置密码。
+    </p>
+    <p style="color: #909399; font-size: 13px; margin-top: 8px;">
+      管理员可在后台 → 用户管理 → 重置密码
+    </p>
+    <template #footer>
+      <el-button type="primary" @click="showForgotDialog = false">知道了</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <style scoped>
@@ -227,8 +247,44 @@ function handleGuestLogin() {
   color: #606266;
 }
 
+.forgot-line {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.forgot-hint {
+  color: #909399;
+  font-size: 13px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.forgot-hint:hover {
+  color: #2c3e50;
+  text-decoration: underline;
+}
+
 .guest-btn:hover {
   border-color: #8b7355;
   color: #8b7355;
+}
+
+.register-link {
+  color: #409eff;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.register-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+  .login-title { font-size:20px;letter-spacing:1px }
+  .login-subtitle { font-size:12px }
+  .login-card :deep(.el-card__body) { padding:16px 18px 24px }
+  .role-tabs :deep(.el-tabs__item) { font-size:13px;padding:0 10px }
+  .login-btn { font-size:14px }
+  .guest-btn { font-size:13px }
 }
 </style>

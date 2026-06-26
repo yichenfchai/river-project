@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElTable, ElTableColumn, ElTag, ElButton, ElPagination, ElDialog, ElForm, ElFormItem, ElInput, ElInputNumber, ElSwitch, ElMessage, ElMessageBox, ElIcon } from 'element-plus'
+import { useMessage } from '@/composables/useMessage'
 import { Plus, Edit, Delete } from '@element-plus/icons-vue'
 import { getShopItems, createShopItem, updateShopItem, deleteShopItem } from '@/api/modules/shop'
 import type { ShopItem } from '@/api/modules/shop'
+
+
+const msg = useMessage()
 
 const items = ref<ShopItem[]>([])
 const loading = ref(false)
@@ -65,7 +69,7 @@ async function handleSubmit() {
         stock: form.value.stock,
         is_active: form.value.is_active,
       })
-      ElMessage.success('商品已更新')
+      msg.success('商品已更新')
     } else {
       await createShopItem({
         name: form.value.name,
@@ -75,7 +79,7 @@ async function handleSubmit() {
         stock: form.value.stock,
         is_active: true,
       })
-      ElMessage.success('商品已创建')
+      msg.success('商品已创建')
     }
     dialogVisible.value = false
     fetchItems()
@@ -90,7 +94,7 @@ async function handleDelete(item: ShopItem) {
   try {
     await ElMessageBox.confirm(`确认删除「${item.name}」？此操作不可恢复。`, '删除商品', { type: 'warning' })
     await deleteShopItem(item.id)
-    ElMessage.success('已删除')
+    msg.success('已删除')
     fetchItems()
   } catch {
     // cancelled

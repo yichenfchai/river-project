@@ -68,3 +68,50 @@ func (h *MapHandler) ListPOIs(c *gin.Context) {
 	}
 	response.OK(c, pois)
 }
+
+// GetPOI POI 详情
+func (h *MapHandler) GetPOI(c *gin.Context) {
+	id := c.Param("poi_id")
+	if id == "" {
+		response.Error(c, errors.BadRequest("缺少 POI ID"))
+		return
+	}
+
+	poi, err := h.svc.GetPOI(c.Request.Context(), id)
+	if err != nil {
+		response.Error(c, toAppError(err))
+		return
+	}
+	response.OK(c, poi)
+}
+
+// SearchPOIs 搜索地点
+func (h *MapHandler) SearchPOIs(c *gin.Context) {
+	keyword := c.Query("q")
+	if keyword == "" {
+		response.Error(c, errors.BadRequest("请输入搜索关键词"))
+		return
+	}
+
+	results, err := h.svc.SearchPOIs(c.Request.Context(), keyword)
+	if err != nil {
+		response.Error(c, toAppError(err))
+		return
+	}
+
+	response.OK(c, gin.H{"results": results})
+}
+
+// GetTimeline 获取历史时间线
+func (h *MapHandler) GetTimeline(c *gin.Context) {
+	yearFrom := queryInt(c, "year_from", 0)
+	yearTo := queryInt(c, "year_to", 0)
+
+	events, err := h.svc.GetTimeline(c.Request.Context(), yearFrom, yearTo)
+	if err != nil {
+		response.Error(c, toAppError(err))
+		return
+	}
+
+	response.OK(c, gin.H{"events": events})
+}

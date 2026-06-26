@@ -13,6 +13,8 @@ info:
     - LLM: AI 对话 & 科普故事 (Go 内调用外部 API)
     - Vision: 垃圾分类识别 (Go 内调用)
     - Admin: 管理后台
+    - Geo: 地理位置 & 运河城市
+    - Landing: 欢迎页
     
     **认证**: JWT Bearer Token
   version: 2.0.0
@@ -48,6 +50,8 @@ tags:
     description: YOLO 垃圾分类识别
   - name: Admin
     description: 管理后台
+  - name: Geo
+    description: IP 地理位置 & 运河城市
 
 # ============================================================
 # Security
@@ -328,6 +332,22 @@ components:
         quiz_players: { type: integer, example: 4500 }
         garbage_reports: { type: integer, example: 1280 }
 
+    # ---- Geo ----
+    CanalIntro:
+      type: object
+      properties:
+        is_canal_city: { type: boolean }
+        city: { type: string, example: "扬州" }
+        province: { type: string, example: "江苏省" }
+        ip: { type: string, example: "152.136.45.87" }
+        intro:
+          type: object
+          properties:
+            title: { type: string, example: "淮左名都，漕运枢纽" }
+            content: { type: string }
+            era: { type: string, example: "公元前486年至今" }
+            poi: { type: string, example: "扬州古运河渡口" }
+
   # ---- 通用参数 ----
   parameters:
     PageParam:
@@ -390,6 +410,20 @@ components:
 # PATHS
 # ============================================================
 paths:
+
+  # ========== Geo ==========
+  /geo/canal-intro:
+    get:
+      tags: [Geo]
+      summary: 根据 IP 返回运河城市介绍
+      security: []
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanalIntro"
 
   # ========== Auth ==========
   /auth/register:

@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 import type { UserRole } from '@/types'
 
@@ -8,6 +7,7 @@ const MonitorLayout = () => import('@/layouts/MonitorLayout.vue')
 const AdminLayout = () => import('@/layouts/AdminLayout.vue')
 
 const LoginPage = () => import('@/pages/public/LoginPage.vue')
+const RegisterPage = () => import('@/pages/public/RegisterPage.vue')
 const NotFoundPage = () => import('@/pages/public/NotFound.vue')
 
 function requireAuth(roles?: UserRole[]) {
@@ -37,10 +37,21 @@ const router = createRouter({
       meta: { guest: true },
     },
     {
+      path: '/register',
+      name: 'Register',
+      component: RegisterPage,
+      meta: { guest: true },
+    },
+    {
       path: '/',
       component: UserLayout,
-      redirect: '/home',
       children: [
+        {
+          path: '',
+          name: 'Landing',
+          component: () => import('@/pages/public/LandingPage.vue'),
+          meta: { guest: true },
+        },
         {
           path: 'home',
           name: 'Home',
@@ -55,6 +66,11 @@ const router = createRouter({
           path: 'story',
           name: 'StoryPage',
           component: () => import('@/pages/user/StoryPage.vue'),
+        },
+        {
+          path: 'story/:id',
+          name: 'StoryDetail',
+          component: () => import('@/pages/user/StoryDetail.vue'),
         },
         {
           path: 'plaza',
@@ -160,6 +176,7 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const auth = useAuthStore()
 
+  // guest 页面（/login, /register）：已登录用户跳首页
   if (to.meta.guest) {
     if (auth.isLoggedIn && !auth.isGuest) {
       const role = auth.user?.role
@@ -172,17 +189,23 @@ router.beforeEach((to, from, next) => {
     return
   }
 
+  // 无任何 token → 全部跳登录
+  if (!auth.isLoggedIn) {
+    next('/login')
+    return
+  }
+
+  // 根路径不跳转，展示欢迎页
+  if (to.name === 'Landing') {
+    next()
+    return
+  }
+
+  // 角色路由鉴权
   const roles = to.meta.roles as UserRole[] | undefined
-  if (roles && roles.length > 0) {
-    if (!auth.isLoggedIn) {
+  if (roles && roles.length > 0 && auth.user) {
+    if (!roles.includes(auth.user.role)) {
       next('/login')
-      return
-    }
-    if (auth.user && !roles.includes(auth.user.role)) {
-      if (auth.isGuest) {
-        ElMessage.warning('此功能需要登录后使用，请先登录')
-      }
-      next('/home')
       return
     }
   }

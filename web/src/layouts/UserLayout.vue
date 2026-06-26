@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ElMenu, ElMenuItem, ElDropdown, ElDropdownMenu, ElDropdownItem, ElIcon } from 'element-plus'
-import { HomeFilled, MapLocation, Reading, ChatLineSquare, TrophyBase, Present, ArrowDown } from '@element-plus/icons-vue'
+import { ElMenu, ElMenuItem, ElDropdown, ElDropdownMenu, ElDropdownItem, ElIcon, ElDrawer } from 'element-plus'
+import { HomeFilled, MapLocation, Reading, ChatLineSquare, TrophyBase, Present, ArrowDown, Expand, Fold } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
@@ -25,12 +25,23 @@ const navItems = computed(() =>
 
 const activePath = computed(() => route.path)
 
+const isLanding = computed(() => route.name === 'Landing')
 const isHome = computed(() => route.path === '/home')
 const isFullWidth = computed(() => route.path === '/home' || route.path === '/map')
 const headerScrolled = ref(false)
+const mobileMenuOpen = ref(false)
 
 function onScroll() {
   headerScrolled.value = window.scrollY > 60
+}
+
+function toggleMobileMenu() {
+  mobileMenuOpen.value = !mobileMenuOpen.value
+}
+
+function onMobileNav(path: string) {
+  mobileMenuOpen.value = false
+  navigate(path)
 }
 
 onMounted(() => {
@@ -57,9 +68,18 @@ function goToWorkbench() {
 </script>
 
 <template>
-  <div class="user-layout">
+  <!-- 欢迎页：无 layout 壳 -->
+  <template v-if="isLanding">
+    <router-view />
+    <footer class="user-footer">
+      <span>&copy; 2026 大运河生态与文化保护平台 — Grand Canal Guardian</span>
+    </footer>
+  </template>
+
+  <div v-else class="user-layout">
     <header class="user-header" :class="{ scrolled: headerScrolled, 'home-overlay': isHome }">
       <div class="header-left">
+        <el-icon class="hamburger" :size="24" @click="toggleMobileMenu"><Expand /></el-icon>
         <span class="logo" @click="router.push('/')">🏛 大运河保护平台</span>
       </div>
       <div class="header-center">
@@ -102,12 +122,18 @@ function goToWorkbench() {
       </div>
     </header>
 
+    <!-- 移动端抽屉菜单 -->
+    <el-drawer v-model="mobileMenuOpen" direction="ltr" size="70%" :with-header="false">
+      <div class="mobile-nav">
+        <div class="mobile-nav-item" v-for="item in navItems" :key="item.path" @click="onMobileNav(item.path)">
+          <el-icon><component :is="item.icon" /></el-icon>
+          <span>{{ item.name }}</span>
+        </div>
+      </div>
+    </el-drawer>
+
     <main class="user-main" :class="{ 'full-width': isFullWidth }">
-      <router-view v-slot="{ Component, route }">
-        <transition name="page-fade" mode="out-in">
-          <component :is="Component" :key="route.fullPath" />
-        </transition>
-      </router-view>
+      <router-view />
     </main>
 
     <footer class="user-footer">
@@ -297,5 +323,39 @@ function goToWorkbench() {
   font-size: 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   background: #2c3e50;
+}
+
+/* ─── Mobile ─── */
+.hamburger { display:none;color:rgba(255,255,255,0.8);cursor:pointer;margin-right:6px }
+.hamburger:hover { color:#c9b896 }
+
+.mobile-nav { padding:12px 0 }
+.mobile-nav-item {
+  display:flex;align-items:center;gap:12px;padding:14px 20px;
+  font-size:15px;color:#303133;cursor:pointer;transition:background .2s;border-radius:0
+}
+.mobile-nav-item:hover { background:#f5f3ef;color:#2c3e50 }
+
+@media (max-width: 768px) {
+  .hamburger { display:inline-flex }
+  .header-center { display:none }
+  .header-right .username { display:none }
+  .user-header { padding:0 12px }
+  .logo { font-size:14px }
+  .user-main { padding:12px 8px }
+}
+
+@media (max-width: 480px) {
+  .user-header { padding:0 8px; height: 50px }
+  .logo { font-size:13px }
+  .header-left { gap: 4px }
+  .hamburger { margin-right: 2px }
+  .header-right .el-button { font-size: 12px; padding: 5px 12px }
+}
+
+/* safe area for notch phones */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .user-main { padding-bottom: calc(16px + env(safe-area-inset-bottom)) }
+  .user-footer { padding-bottom: calc(16px + env(safe-area-inset-bottom)) }
 }
 </style>

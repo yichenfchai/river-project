@@ -1,9 +1,61 @@
 <script setup lang="ts">
-import { ElCard, ElRow, ElCol, ElTable, ElTableColumn, ElTag, ElIcon, ElStatistic } from 'element-plus'
-import { Camera, DataAnalysis, Check, Clock } from '@element-plus/icons-vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElCard, ElRow, ElCol, ElTable, ElTableColumn, ElTag, ElIcon, ElEmpty } from 'element-plus'
+import { Camera, DataAnalysis, Check, Clock } from '@element-plus/icons-vue'
+import { getMyReports } from '@/api/modules/vision'
+import type { GarbageReport } from '@/types'
 
 const router = useRouter()
+
+interface StatValues { today: number; month: number; verified: number; pending: number }
+const stats = ref<StatValues>({ today: 0, month: 0, verified: 0, pending: 0 })
+const categoryStats = ref<{ category: string; count: number; percent: number }[]>([])
+const recentReports = ref<GarbageReport[]>([])
+const loading = ref(true)
+
+onMounted(async () => {
+  try {
+    const res = await getMyReports({ page: 1, page_size: 50 })
+    const reports = res.data.reports || []
+    
+    // 计数
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    let todayCount = 0, verifiedCount = 0, pendingCount = 0
+    
+    reports.forEach((r: GarbageReport) => {
+      if (new Date(r.reported_at) >= today) todayCount++
+      if (r.status === 'verified') verifiedCount++
+      if (r.status === 'pending') pendingCount++
+    })
+    
+    stats.value = {
+      today: todayCount,
+      month: reports.length,
+      verified: verifiedCount,
+      pending: pendingCount,
+    }
+    
+    // 分类统计
+    const catMap: Record<string, number> = {}
+    reports.forEach((r: GarbageReport) => {
+      r.detections?.forEach(d => {
+        catMap[d.category] = (catMap[d.category] || 0) + 1
+      })
+    })
+    const total = Object.values(catMap).reduce((a, b) => a + b, 0) || 1
+    categoryStats.value = Object.entries(catMap).map(([cat, cnt]) => ({
+      category: cat, count: cnt, percent: Math.round((cnt / total) * 100)
+    }))
+    
+    recentReports.value = reports.slice(0, 5)
+  } catch {
+    // API 未就绪时显示空状态
+  } finally {
+    loading.value = false
+  }
+})
 </script>
 
 <template>
@@ -18,24 +70,26 @@ const router = useRouter()
     <ElRow :gutter="16" class="stat-row">
       <ElCol :span="6">
         <ElCard shadow="hover">
-          <el-statistic title="今日上报" :value="12" />
+          <el-statistic title="今日上报" :value="stats.today" />
         </ElCard>
       </ElCol>
       <ElCol :span="6">
         <ElCard shadow="hover">
-          <el-statistic title="本月累计" :value="86" />
+          <el-statistic title="本月累计" :value="stats.month" />
         </ElCard>
       </ElCol>
       <ElCol :span="6">
         <ElCard shadow="hover">
-          <el-statistic title="已验证" :value="72" />
-          <template #suffix><el-icon><Check /></el-icon></template>
+          <el-statistic title="已验证" :value="stats.verified">
+            <template #suffix><el-icon><Check /></el-icon></template>
+          </el-statistic>
         </ElCard>
       </ElCol>
       <ElCol :span="6">
         <ElCard shadow="hover">
-          <el-statistic title="待处理" :value="14" />
-          <template #suffix><el-icon><Clock /></el-icon></template>
+          <el-statistic title="待处理" :value="stats.pending">
+            <template #suffix><el-icon><Clock /></el-icon></template>
+          </el-statistic>
         </ElCard>
       </ElCol>
     </ElRow>
@@ -46,7 +100,8 @@ const router = useRouter()
           <template #header>
             <span><el-icon><DataAnalysis /></el-icon> 分类统计</span>
           </template>
-          <ElTable :data="categoryStats" size="small">
+          <el-empty v-if="categoryStats.length === 0" description="暂无数据" :image-size="60" />
+          <ElTable v-else :data="categoryStats" size="small">
             <ElTableColumn prop="category" label="类别" />
             <ElTableColumn prop="count" label="数量" width="80" />
             <ElTableColumn prop="percent" label="占比" width="100">
@@ -62,34 +117,20 @@ const router = useRouter()
           <template #header>
             <span>最近上报</span>
           </template>
+          <el-empty v-if="recentReports.length === 0" description="暂无上报记录" :image-size="60" />
           <div v-for="item in recentReports" :key="item.id" class="recent-item">
-            <span class="item-type">{{ item.type }}</span>
-            <span class="item-confidence">置信度 {{ item.confidence }}%</span>
+            <span class="item-type">{{ item.detections?.[0]?.class_name || '未知' }}</span>
+            <span class="item-confidence" v-if="item.detections?.[0]">置信度 {{ Math.round(item.detections[0].confidence * 100) }}%</span>
             <el-tag size="small" :type="item.status === 'verified' ? 'success' : 'warning'">
               {{ item.status === 'verified' ? '已验证' : '待处理' }}
             </el-tag>
-            <span class="item-time">{{ item.time }}</span>
+            <span class="item-time">{{ item.reported_at }}</span>
           </div>
         </ElCard>
       </ElCol>
     </ElRow>
   </div>
 </template>
-
-<script lang="ts">
-const categoryStats = [
-  { category: '可回收物', count: 35, percent: 41 },
-  { category: '其他垃圾', count: 28, percent: 33 },
-  { category: '厨余垃圾', count: 12, percent: 14 },
-  { category: '有害垃圾', count: 11, percent: 12 },
-]
-const recentReports = [
-  { id: 1, type: '塑料瓶', confidence: 96, status: 'verified', time: '10 分钟前' },
-  { id: 2, type: '塑料袋', confidence: 88, status: 'pending', time: '30 分钟前' },
-  { id: 3, type: '废电池', confidence: 94, status: 'verified', time: '1 小时前' },
-  { id: 4, type: '玻璃瓶', confidence: 91, status: 'pending', time: '2 小时前' },
-]
-</script>
 
 <style scoped>
 .monitor-dashboard {
@@ -138,5 +179,6 @@ const recentReports = [
 .item-time {
   color: #c0c4cc;
   margin-left: auto;
+  font-size: 12px;
 }
 </style>

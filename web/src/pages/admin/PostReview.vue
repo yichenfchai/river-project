@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElTable, ElTableColumn, ElTag, ElButton, ElPagination, ElMessage } from 'element-plus'
+import { useMessage } from '@/composables/useMessage'
 import { getPendingPosts, reviewPost } from '@/api/modules/admin'
 import type { Post, Pagination } from '@/types'
+
+
+const msg = useMessage()
 
 const posts = ref<Post[]>([])
 const pagination = ref<Pagination>({ page: 1, page_size: 10, total: 0, total_pages: 0 })
@@ -25,7 +29,7 @@ async function handleReview(row: Post, action: 'approve' | 'reject') {
   try {
     await reviewPost(row.id, { action, reason: action === 'reject' ? '不符合社区规范' : undefined })
     row.status = action === 'approve' ? 'approved' : 'rejected'
-    ElMessage.success(action === 'approve' ? '已通过审核' : '已驳回')
+    msg.success(action === 'approve' ? '已通过审核' : '已驳回')
   } catch {
     // handled by interceptor
   }

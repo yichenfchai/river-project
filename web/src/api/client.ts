@@ -2,7 +2,7 @@ import axios, { type AxiosInstance, type AxiosError, type InternalAxiosRequestCo
 import { ElMessage } from 'element-plus'
 import type { ApiResponse } from '@/types'
 
-const TOKEN_REFRESH_PATH = '/api/v1/auth/refresh'
+const TOKEN_REFRESH_PATH = '/auth/refresh'
 
 class ApiClient {
   private instance: AxiosInstance
@@ -37,6 +37,15 @@ class ApiClient {
   private clearTokens() {
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
+  }
+
+  private onForceLogout: () => void = () => {
+    window.location.href = '/login'
+  }
+
+  /** Allow external injection (e.g. main.ts) to use router push instead of hard reload */
+  setForceLogoutHandler(handler: () => void) {
+    this.onForceLogout = handler
   }
 
   private onRefreshed(token: string) {
@@ -108,7 +117,7 @@ class ApiClient {
         if (!newToken) {
           this.isRefreshing = false
           this.clearTokens()
-          window.location.href = '/login'
+          this.onForceLogout()
           return Promise.reject(error)
         }
 
@@ -120,25 +129,47 @@ class ApiClient {
     )
   }
 
+  // 去重：300ms 内相同消息不重复弹
+  private lastError = { text: '', time: 0 }
+  private showError(msg: string, type: 'error' | 'warning' = 'error') {
+    const now = Date.now()
+    if (msg === this.lastError.text && now - this.lastError.time < 300) return
+    this.lastError = { text: msg, time: now }
+    ElMessage[type]({ message: msg, duration: 2000, showClose: true })
+  }
+
   private handleError(error: AxiosError<ApiResponse>) {
     const status = error.response?.status
     const message = error.response?.data?.message
 
+    // Network / timeout / DNS errors — no response at all
+    if (!status) {
+      if (error.code === 'ECONNABORTED') {
+        this.showError('请求超时，请检查网络后重试', 'warning')
+      } else {
+        this.showError('网络连接失败，请检查网络', 'error')
+      }
+      return
+    }
+
     switch (status) {
+      case 400:
+        this.showError(message || '请求参数错误')
+        break
       case 403:
-        ElMessage.error('无权执行此操作')
+        this.showError('无权执行此操作')
         break
       case 404:
-        ElMessage.error(message || '资源不存在')
+        this.showError(message || '资源不存在')
         break
       case 429:
-        ElMessage.warning('请求过于频繁，请稍后再试')
+        this.showError('请求过于频繁，请稍后再试', 'warning')
         break
       case 500:
-        ElMessage.error('服务器内部错误，请稍后重试')
+        this.showError('服务器内部错误，请稍后重试')
         break
       default:
-        if (message) ElMessage.error(message)
+        if (message) this.showError(message)
     }
   }
 
