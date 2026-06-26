@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -19,6 +20,9 @@ type AuthService interface {
 	Register(ctx context.Context, input RegisterInput) (*AuthResult, error)
 	Login(ctx context.Context, input LoginInput) (*AuthResult, error)
 	GetProfile(ctx context.Context, userID string) (*model.User, error)
+	UpdateProfile(ctx context.Context, userID string, input UpdateProfileInput) (*model.User, error)
+	Refresh(ctx context.Context, refreshToken string) (*auth.TokenPair, error)
+	Logout(ctx context.Context, userID, jti string, expiresAt time.Time) error
 }
 
 type RegisterInput struct {
@@ -31,6 +35,12 @@ type RegisterInput struct {
 type LoginInput struct {
 	Username string
 	Password string
+}
+
+type UpdateProfileInput struct {
+	Nickname  *string
+	Bio       *string
+	AvatarURL *string
 }
 
 type AuthResult struct {
@@ -54,10 +64,13 @@ type UserRepository interface {
 	ExistsByEmail(ctx context.Context, email string) (bool, error)
 	Create(ctx context.Context, user *model.User) error
 	FindByID(ctx context.Context, id string) (*model.User, error)
+	Update(ctx context.Context, user *model.User) error
 }
 
 type TokenManager interface {
 	IssueTokens(userID, role, deviceID string) (*auth.TokenPair, error)
+	ParseToken(tokenStr string) (*auth.Claims, error)
+	BlacklistJTI(jti string, expiresAt time.Time)
 }
 
 var _ UserRepository = (repository.UserRepository)(nil)
@@ -158,4 +171,74 @@ func (s *authService) Login(ctx context.Context, input LoginInput) (*AuthResult,
 
 func (s *authService) GetProfile(ctx context.Context, userID string) (*model.User, error) {
 	return s.repo.FindByID(ctx, userID)
+}
+
+func (s *authService) UpdateProfile(ctx context.Context, userID string, input UpdateProfileInput) (*model.User, error) {
+	user, err := s.repo.FindByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if input.Nickname != nil {
+		if len(*input.Nickname) > 128 {
+			return nil, apperrors.BadRequest("昵称不能超过128字")
+		}
+		user.Nickname = *input.Nickname
+	}
+	if input.Bio != nil {
+		if len(*input.Bio) > 500 {
+			return nil, apperrors.BadRequest("简介不能超过500字")
+		}
+		user.Bio = *input.Bio
+	}
+	if input.AvatarURL != nil {
+		if len(*input.AvatarURL) > 512 {
+			return nil, apperrors.BadRequest("头像URL过长")
+		}
+		user.AvatarURL = *input.AvatarURL
+	}
+
+	if err := s.repo.Update(ctx, user); err != nil {
+		return nil, err
+	}
+
+	s.log.Info("用户资料更新", zap.String("user_id", userID))
+	return user, nil
+}
+
+func (s *authService) Refresh(ctx context.Context, refreshToken string) (*auth.TokenPair, error) {
+	oldClaims, err := s.tm.ParseToken(refreshToken)
+	if err != nil {
+		s.log.Warn("Refresh失败-Token无效", zap.Error(err))
+		return nil, apperrors.NewDefault(apperrors.ErrTokenInvalid)
+	}
+
+	user, err := s.repo.FindByID(ctx, oldClaims.Subject)
+	if err != nil {
+		s.log.Warn("Refresh失败-用户不存在", zap.String("user_id", oldClaims.Subject))
+		return nil, err
+	}
+
+	// 以数据库最新角色签发新 Token
+	tokens, err := s.tm.IssueTokens(user.ID, user.Role, "")
+	if err != nil {
+		s.log.Error("签发Token失败", zap.Error(err))
+		return nil, apperrors.Internal(err)
+	}
+
+	// 令牌旋转：旧 refresh token 立即失效
+	if oldClaims.ExpiresAt != nil {
+		s.tm.BlacklistJTI(oldClaims.ID, oldClaims.ExpiresAt.Time)
+	}
+
+	s.log.Info("Token刷新成功", zap.String("user_id", user.ID))
+	return tokens, nil
+}
+
+func (s *authService) Logout(ctx context.Context, userID, jti string, expiresAt time.Time) error {
+	if jti != "" {
+		s.tm.BlacklistJTI(jti, expiresAt)
+	}
+	s.log.Info("用户登出", zap.String("user_id", userID), zap.String("jti", jti))
+	return nil
 }

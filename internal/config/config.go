@@ -11,6 +11,7 @@ import (
 type Config struct {
 	Server   ServerConfig
 	Database DatabaseConfig
+	Redis    RedisConfig
 	JWT      JWTConfig
 	LLM      LLMConfig
 }
@@ -50,6 +51,12 @@ type JWTConfig struct {
 	RefreshTTL time.Duration
 }
 
+type RedisConfig struct {
+	Addr     string
+	Password string
+	DB       int
+}
+
 func Load(s *secrets.Store) Config {
 	return Config{
 		Server: ServerConfig{
@@ -73,6 +80,11 @@ func Load(s *secrets.Store) Config {
 			Secret:     s.Get("JWT_SECRET", ""),
 			AccessTTL:  envDuration("JWT_ACCESS_TTL", 15*time.Minute),
 			RefreshTTL: envDuration("JWT_REFRESH_TTL", 7*24*time.Hour),
+		},
+		Redis: RedisConfig{
+			Addr:     envStr("REDIS_ADDR", "localhost:6379"),
+			Password: envStr("REDIS_PASSWORD", ""),
+			DB:       envInt("REDIS_DB", 0),
 		},
 		LLM: LLMConfig{
 			Provider:    envStr("LLM_PROVIDER", "openai"),

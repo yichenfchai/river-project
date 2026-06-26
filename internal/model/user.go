@@ -17,6 +17,8 @@ type User struct {
 	Bio       string         `gorm:"size:512" json:"bio"`
 	Points    int            `gorm:"default:0" json:"points"`
 	RankTitle string         `gorm:"size:64" json:"rank_title"`
+	Status    string         `gorm:"size:16;default:active" json:"-"`
+	LastLoginAt *time.Time   `json:"last_login_at,omitempty"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`

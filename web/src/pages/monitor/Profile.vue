@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { ElForm, ElFormItem, ElInput, ElButton, ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
+import { updateProfile } from '@/api/modules/auth'
 
 const auth = useAuthStore()
 
@@ -10,8 +11,14 @@ const form = ref({
   bio: '',
 })
 
-function handleSave() {
-  ElMessage.success('资料已更新')
+async function handleSave() {
+  try {
+    await updateProfile({ nickname: form.value.nickname, bio: form.value.bio })
+    await auth.fetchProfile()
+    ElMessage.success('资料已更新')
+  } catch {
+    ElMessage.error('保存失败')
+  }
 }
 </script>
 

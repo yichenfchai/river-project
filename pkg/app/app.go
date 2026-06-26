@@ -25,11 +25,11 @@ type App struct {
 }
 
 type Config struct {
-	Name    string
-	Host    string
-	Port    int
-	Mode    string
-	Log     log.Config
+	Name string
+	Host string
+	Port int
+	Mode string
+	Log  log.Config
 }
 
 func DefaultConfig() Config {
@@ -83,7 +83,7 @@ func (a *App) Run() error {
 	}()
 
 	<-quit
-	a.Logger.Info("收到关闭信号，开始优雅关闭...")
+	a.Logger.Info("收到关闭信号，开始关闭...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()

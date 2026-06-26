@@ -15,6 +15,8 @@ type MapRepository interface {
 	ListLayers(ctx context.Context) ([]model.MapLayer, error)
 	GetLayer(ctx context.Context, id string) (*model.MapLayer, error)
 	ListPOIs(ctx context.Context, lat, lng, radius float64, category string) ([]model.MapPOI, error)
+	GetPOI(ctx context.Context, id string) (*model.MapPOI, error)
+	SearchPOIs(ctx context.Context, keyword string) ([]model.MapPOI, error)
 	Seed(ctx context.Context) error
 }
 
@@ -86,6 +88,31 @@ func cos(deg float64) float64 {
 		x = 0.01
 	}
 	return x
+}
+
+func (r *mapRepo) GetPOI(ctx context.Context, id string) (*model.MapPOI, error) {
+	var poi model.MapPOI
+	err := r.db.WithContext(ctx).Where("id = ?", id).First(&poi).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, apperrors.NewDefault(apperrors.ErrPOINotFound)
+		}
+		return nil, apperrors.WrapDefault(apperrors.ErrDatabaseError, err)
+	}
+	return &poi, nil
+}
+
+func (r *mapRepo) SearchPOIs(ctx context.Context, keyword string) ([]model.MapPOI, error) {
+	var pois []model.MapPOI
+	like := "%" + keyword + "%"
+	err := r.db.WithContext(ctx).
+		Where("name LIKE ? OR description LIKE ? OR category LIKE ?", like, like, like).
+		Order("name ASC").Limit(20).
+		Find(&pois).Error
+	if err != nil {
+		return nil, apperrors.WrapDefault(apperrors.ErrDatabaseError, err)
+	}
+	return pois, nil
 }
 
 // Seed 幂等种子数据：4 个运河图层 + 15 个文化遗产 POI

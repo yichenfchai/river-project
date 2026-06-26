@@ -11,9 +11,11 @@ import (
 // ─── Mock Map Repository ───
 
 type mockMapRepo struct {
-	listLayersFn func(ctx context.Context) ([]model.MapLayer, error)
-	getLayerFn   func(ctx context.Context, id string) (*model.MapLayer, error)
-	listPOIsFn   func(ctx context.Context, lat, lng, radius float64, category string) ([]model.MapPOI, error)
+	listLayersFn   func(ctx context.Context) ([]model.MapLayer, error)
+	getLayerFn     func(ctx context.Context, id string) (*model.MapLayer, error)
+	listPOIsFn     func(ctx context.Context, lat, lng, radius float64, category string) ([]model.MapPOI, error)
+	getPOIFn       func(ctx context.Context, id string) (*model.MapPOI, error)
+	searchPOIsFn   func(ctx context.Context, keyword string) ([]model.MapPOI, error)
 }
 
 func (m *mockMapRepo) ListLayers(ctx context.Context) ([]model.MapLayer, error) {
@@ -35,6 +37,18 @@ func (m *mockMapRepo) ListPOIs(ctx context.Context, lat, lng, radius float64, ca
 	return nil, nil
 }
 func (m *mockMapRepo) Seed(ctx context.Context) error { return nil }
+func (m *mockMapRepo) GetPOI(ctx context.Context, id string) (*model.MapPOI, error) {
+	if m.getPOIFn != nil {
+		return m.getPOIFn(ctx, id)
+	}
+	return nil, apperrors.NewDefault(apperrors.ErrPOINotFound)
+}
+func (m *mockMapRepo) SearchPOIs(ctx context.Context, keyword string) ([]model.MapPOI, error) {
+	if m.searchPOIsFn != nil {
+		return m.searchPOIsFn(ctx, keyword)
+	}
+	return nil, nil
+}
 
 // ─── Tests ───
 

@@ -5,9 +5,10 @@ import (
 	"runtime/debug"
 
 	"github.com/gin-gonic/gin"
-	"github.com/grand-canal-guardian/pkg/errors"
-	"github.com/grand-canal-guardian/pkg/response"
 	"go.uber.org/zap"
+
+	"github.com/yichenfchai/river-project/pkg/errors"
+	"github.com/yichenfchai/river-project/pkg/response"
 )
 
 // Recovery 捕获 panic，返回统一错误 (不泄露原始信息)

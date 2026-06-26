@@ -113,3 +113,74 @@ func (h *LLMHandler) Health(c *gin.Context) {
 		"llm":    ok,
 	})
 }
+
+// ListSessions 对话会话列表
+func (h *LLMHandler) ListSessions(c *gin.Context) {
+	sessions, err := h.svc.ListSessions(c.Request.Context())
+	if err != nil {
+		response.Error(c, toAppError(err))
+		return
+	}
+	response.OK(c, gin.H{"sessions": sessions})
+}
+
+// GetSessionMessages 获取会话消息
+func (h *LLMHandler) GetSessionMessages(c *gin.Context) {
+	sessionID := c.Param("session_id")
+	if sessionID == "" {
+		response.Error(c, errors.BadRequest("缺少 session_id"))
+		return
+	}
+	messages, err := h.svc.GetSessionMessages(c.Request.Context(), sessionID)
+	if err != nil {
+		response.Error(c, toAppError(err))
+		return
+	}
+	response.OK(c, gin.H{"messages": messages})
+}
+
+// DeleteSession 删除会话
+func (h *LLMHandler) DeleteSession(c *gin.Context) {
+	sessionID := c.Param("session_id")
+	if sessionID == "" {
+		response.Error(c, errors.BadRequest("缺少 session_id"))
+		return
+	}
+	if err := h.svc.DeleteSession(c.Request.Context(), sessionID); err != nil {
+		response.Error(c, toAppError(err))
+		return
+	}
+	response.NoContent(c)
+}
+
+// ListStories 故事列表
+func (h *LLMHandler) ListStories(c *gin.Context) {
+	stories, err := h.svc.ListStories(c.Request.Context())
+	if err != nil {
+		response.Error(c, toAppError(err))
+		return
+	}
+	if stories == nil {
+		stories = []service.StoryOutput{}
+	}
+	response.OK(c, gin.H{"stories": stories})
+}
+
+// GetStory 获取故事详情
+func (h *LLMHandler) GetStory(c *gin.Context) {
+	storyID := c.Param("story_id")
+	if storyID == "" {
+		response.Error(c, errors.BadRequest("缺少 story_id"))
+		return
+	}
+	story, err := h.svc.GetStory(c.Request.Context(), storyID)
+	if err != nil {
+		response.Error(c, toAppError(err))
+		return
+	}
+	if story == nil {
+		response.Error(c, errors.NotFound("故事"))
+		return
+	}
+	response.OK(c, story)
+}

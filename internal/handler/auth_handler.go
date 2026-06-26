@@ -105,3 +105,104 @@ func (h *AuthHandler) GetProfile(c *gin.Context) {
 
 	response.OK(c, user)
 }
+
+type updateProfileRequest struct {
+	Nickname  *string `json:"nickname"`
+	Bio       *string `json:"bio"`
+	AvatarURL *string `json:"avatar_url"`
+}
+
+func (h *AuthHandler) UpdateProfile(c *gin.Context) {
+	userID := auth.GetUserID(c)
+	if userID == "" {
+		response.Error(c, errors.NewDefault(errors.ErrUnauthorized))
+		return
+	}
+
+	var req updateProfileRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, errors.BadRequest("请正确填写资料"))
+		return
+	}
+
+	user, err := h.svc.UpdateProfile(c.Request.Context(), userID, service.UpdateProfileInput{
+		Nickname:  req.Nickname,
+		Bio:       req.Bio,
+		AvatarURL: req.AvatarURL,
+	})
+	if err != nil {
+		response.Error(c, toAppError(err))
+		return
+	}
+
+	response.OK(c, user)
+}
+
+type refreshRequest struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
+func (h *AuthHandler) Refresh(c *gin.Context) {
+	var req refreshRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, errors.BadRequest("请提供 refresh_token"))
+		return
+	}
+
+	tokens, err := h.svc.Refresh(c.Request.Context(), req.RefreshToken)
+	if err != nil {
+		response.Error(c, toAppError(err))
+		return
+	}
+
+	response.OK(c, gin.H{
+		"access_token":  tokens.AccessToken,
+		"refresh_token": tokens.RefreshToken,
+		"token_type":    tokens.TokenType,
+		"expires_in":    tokens.ExpiresIn,
+	})
+}
+
+func (h *AuthHandler) Logout(c *gin.Context) {
+	userID := auth.GetUserID(c)
+	jti := auth.GetJTI(c)
+	expiresAt := auth.GetExpiresAt(c)
+	if userID == "" {
+		response.Error(c, errors.NewDefault(errors.ErrUnauthorized))
+		return
+	}
+
+	if err := h.svc.Logout(c.Request.Context(), userID, jti, expiresAt); err != nil {
+		response.Error(c, toAppError(err))
+		return
+	}
+
+	response.NoContent(c)
+}
+
+// GetUserProfile 获取用户公开信息
+func (h *AuthHandler) GetUserProfile(c *gin.Context) {
+	userID := c.Param("user_id")
+	if userID == "" {
+		response.Error(c, errors.BadRequest("缺少用户 ID"))
+		return
+	}
+
+	user, err := h.svc.GetProfile(c.Request.Context(), userID)
+	if err != nil {
+		response.Error(c, toAppError(err))
+		return
+	}
+
+	response.OK(c, gin.H{
+		"id":         user.ID,
+		"username":   user.Username,
+		"nickname":   user.Nickname,
+		"avatar_url": user.AvatarURL,
+		"bio":        user.Bio,
+		"role":       user.Role,
+		"points":     user.Points,
+		"rank_title": user.RankTitle,
+		"created_at": user.CreatedAt,
+	})
+}

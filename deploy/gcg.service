@@ -1,0 +1,15 @@
+[Unit]
+Description=Grand Canal Guardian
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/gcg
+EnvironmentFile=/opt/gcg/.env
+ExecStart=/opt/gcg/gcg
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

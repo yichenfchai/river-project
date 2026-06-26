@@ -61,6 +61,28 @@ func OKList(c *gin.Context, items interface{}, page, pageSize int, total int64) 
 	})
 }
 
+// OKListKey 带自定义列表字段名的分页响应（如 "posts" / "comments"）
+// 产出: {"code":0,"message":"ok","data":{"<listKey>":[...],"pagination":{...}}}
+func OKListKey(c *gin.Context, listKey string, items interface{}, page, pageSize int, total int64) {
+	totalPages := 0
+	if pageSize > 0 {
+		totalPages = int(total) / pageSize
+		if int(total)%pageSize > 0 {
+			totalPages++
+		}
+	}
+	c.JSON(http.StatusOK, R{
+		Code:    0,
+		Message: "ok",
+		Data: map[string]interface{}{
+			listKey: items,
+			"pagination": PageData{
+				Page: page, PageSize: pageSize, Total: total, TotalPages: totalPages,
+			},
+		},
+	})
+}
+
 func Error(c *gin.Context, err *errors.AppError) {
 	status := err.Code.HTTPStatus()
 	body := R{Code: int(err.Code), Message: err.Message}
