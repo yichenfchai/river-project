@@ -200,3 +200,74 @@ a {
     transform: translateY(-10px);
   }
 }
+
+/* ── Mobile global fixes ── */
+@media (max-width: 768px) {
+  .el-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .el-button {
+    min-height: 36px;
+    min-width: 44px;
+  }
+
+  .el-menu-item {
+    min-height: 44px;
+  }
+
+  .el-input__inner,
+  .el-select .el-input__inner {
+    font-size: 16px;
+  }
+
+  .el-dialog {
+    width: 92vw !important;
+    max-width: 92vw !important;
+  }
+
+  .el-form-item__label {
+    font-size: 13px;
+  }
+
+  .el-card {
+    --el-card-padding: 16px;
+  }
+
+  .el-pagination {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  :root {
+    --el-border-radius-base: 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .el-button--large {
+    font-size: 14px;
+    padding: 10px 18px;
+    border-radius: 12px;
+  }
+
+  h1 { font-size: clamp(22px, 7vw, 32px) !important; }
+  h2 { font-size: clamp(18px, 5vw, 24px) !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

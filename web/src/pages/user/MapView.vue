@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { ElButton, ElTag, ElEmpty, ElMessage } from 'element-plus'
+import { useMessage } from '@/composables/useMessage'
 import { getMapLayers, getMapLayer, getPOIs } from '@/api/modules/map'
 import type { MapLayerInfo, MapPOI } from '@/api/modules/map'
 
-declare const L: any
+
+const msg = useMessage()
+
+import L from 'leaflet'
 
 const layers = ref<MapLayerInfo[]>([])
 const activeLayer = ref<string | null>(null)
@@ -59,10 +63,11 @@ function initMap() {
     zoomControl: true,
   })
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  L.tileLayer('https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', {
+    subdomains: '1234',
+    attribution: '&copy; 高德地图',
     maxZoom: 18,
-  }).addTo(map)  // eslint-disable-line
+  }).addTo(map)
 }
 
 async function toggleLayer(layerInfo: MapLayerInfo) {
@@ -100,7 +105,7 @@ async function toggleLayer(layerInfo: MapLayerInfo) {
     fetchPOIs()
     showCityLabels()
   } catch {
-    ElMessage.error('加载图层失败')
+    msg.error('加载图层失败')
   } finally {
     loading.value = false
   }

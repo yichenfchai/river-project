@@ -1,25 +1,44 @@
 <script setup lang="ts">
-const sampleStories = [
-  { id: 1, emoji: '🏰', topic: '历史', title: '隋炀帝与通济渠', excerpt: '公元605年，隋炀帝下令开凿连通黄河与淮河的通济渠...', age: '青少年', likes: 128 },
-  { id: 2, emoji: '🦅', topic: '生态', title: '运河边的白鹭家族', excerpt: '在扬州段的运河畔，生活着一个庞大的白鹭家族...', age: '儿童', likes: 95 },
-  { id: 3, emoji: '🏗', topic: '工程', title: '古代船闸的秘密', excerpt: '京口闸、瓜洲闸——古人如何让船翻山越岭？', age: '成人', likes: 210 },
-  { id: 4, emoji: '🎭', topic: '民俗', title: '船工号子的回响', excerpt: '运河两岸苍凉的船工号子，是非遗中的活态史诗', age: '成人', likes: 73 },
-]</script>
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { getStories } from '@/api/modules/story'
+import type { Story } from '@/api/modules/story'
+
+const router = useRouter()
+const stories = ref<Story[]>([])
+const loading = ref(true)
+
+onMounted(async () => {
+  try {
+    const res = await getStories({ page_size: 20 })
+    stories.value = res.data.stories || []
+  } catch {
+    stories.value = []
+  } finally {
+    loading.value = false
+  }
+})
+
+function openStory(id: string) {
+  router.push(`/story/${id}`)
+}
+</script>
 
 <template>
   <div class="story-page">
     <h2>📖 科普故事会</h2>
     <p class="page-desc">AI 驱动的运河文化科普内容 —— 跨越 2500 年的运河故事</p>
 
-    <div class="story-grid">
-      <div v-for="story in sampleStories" :key="story.id" class="story-card">
-        <div class="story-cover">{{ story.emoji }}</div>
+    <div class="story-grid" v-loading="loading">
+      <div v-if="!loading && stories.length === 0" class="empty-hint">暂无科普故事，敬请期待</div>
+      <div v-for="story in stories" :key="story.id" class="story-card" @click="openStory(story.id)">
+        <div class="story-cover">{{ story.emoji || '📖' }}</div>
         <div class="story-info">
           <span class="story-tag">{{ story.topic }}</span>
           <h3>{{ story.title }}</h3>
-          <p>{{ story.excerpt }}</p>
+          <p>{{ story.content.slice(0, 80) }}...</p>
           <div class="story-meta">
-            <span>{{ story.age }}</span>
+            <span>{{ story.age_group }}</span>
             <span>{{ story.likes }} 赞</span>
           </div>
         </div>
@@ -109,5 +128,38 @@ const sampleStories = [
   gap: 16px;
   font-size: 12px;
   color: #c0c4cc;
+}
+
+.empty-hint {
+  text-align: center;
+  color: #c0c4cc;
+  padding: 40px 0;
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 768px) {
+  .story-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .story-page {
+    padding: 0 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .story-card {
+    flex-direction: column;
+  }
+
+  .story-cover {
+    width: 100%;
+    min-height: 100px;
+    font-size: 36px;
+  }
+
+  .story-info {
+    padding: 12px 14px;
+  }
 }
 </style>

@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { ElCard, ElButton, ElTag, ElPagination, ElEmpty, ElMessage, ElMessageBox, ElIcon } from 'element-plus'
+import { useMessage } from '@/composables/useMessage'
 import { Present, Coin } from '@element-plus/icons-vue'
 import { getShopItems, redeemItem, getHistory } from '@/api/modules/shop'
 import { getMyProfile } from '@/api/modules/auth'
 import { useAuthStore } from '@/stores/auth'
 import type { ShopItem, Redemption } from '@/api/modules/shop'
+
+
+const msg = useMessage()
 
 const auth = useAuthStore()
 const userPoints = ref(0)
@@ -55,7 +59,7 @@ async function fetchHistory(page = 1) {
 
 async function handleRedeem(item: ShopItem) {
   if (auth.isGuest) {
-    ElMessage.warning('请先登录后兑换')
+    msg.warning('请先登录后兑换')
     return
   }
   try {
@@ -72,9 +76,9 @@ async function handleRedeem(item: ShopItem) {
   try {
     const res =     await redeemItem(item.id)
     userPoints.value = res.data.user_points
-    ElMessage.success(`兑换成功！「${item.name.slice(2)}」已获得，剩余积分 ${res.data.user_points}`)
+    msg.success(`兑换成功！「${item.name.slice(2)}」已获得，剩余积分 ${res.data.user_points}`)
   } catch {
-    ElMessage.error('兑换失败，可能积分不足或商品已售罄')
+    msg.error('兑换失败，可能积分不足或商品已售罄')
   } finally {
     redeeming.value = null
   }

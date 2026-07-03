@@ -23,6 +23,7 @@ var DefaultMessages = map[ErrorCode]string{
 	ErrPostNotOwner:     "只能操作自己的帖子",
 	ErrCommentNotFound:  "评论不存在",
 	ErrContentSensitive: "内容包含违规信息，请修改后重试",
+	ErrStoryNotFound:    "科普故事不存在",
 
 	ErrPOINotFound:   "POI 不存在",
 	ErrRouteNotFound: "路线不存在",

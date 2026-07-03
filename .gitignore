@@ -39,3 +39,8 @@ web/dist/
 
 *.zip
 __pycache__/
+# Vite cache
+.vite/
+
+# Deploy binary
+gcg

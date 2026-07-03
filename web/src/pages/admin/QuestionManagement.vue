@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { ElForm, ElFormItem, ElInput, ElSelect, ElOption, ElButton, ElMessage } from 'element-plus'
+import { ElForm, ElFormItem, ElInput, ElSelect, ElOption, ElButton } from 'element-plus'
+import { useMessage } from '@/composables/useMessage'
 import { createQuestion } from '@/api/modules/admin'
 import type { CreateQuestionRequest } from '@/types/admin'
+
+const msg = useMessage()
 
 const form = ref<CreateQuestionRequest>({
   question: '',
@@ -17,13 +20,13 @@ const submitting = ref(false)
 async function handleSubmit() {
   const validOptions = form.value.options.filter((o) => o.trim())
   if (validOptions.length < 2) {
-    ElMessage.warning('至少填写 2 个选项')
+    msg.warning('至少填写 2 个选项')
     return
   }
   submitting.value = true
   try {
     await createQuestion({ ...form.value, options: validOptions })
-    ElMessage.success('题目添加成功')
+    msg.success('题目添加成功')
     form.value = { question: '', options: ['', '', '', ''], answer: '', difficulty: 'easy', category: 'history' }
   } catch {
     // handled by interceptor
@@ -92,6 +95,9 @@ async function handleSubmit() {
 <script lang="ts">
 import { ElRow, ElCol } from 'element-plus'
 </script>
+
+const msg = useMessage()
+
 
 <style scoped>
 .question-management {

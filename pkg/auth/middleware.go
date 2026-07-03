@@ -2,6 +2,7 @@ package auth
 
 import (
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/yichenfchai/river-project/pkg/errors"
@@ -9,7 +10,7 @@ import (
 )
 
 type AuthMiddleware struct {
-	tm      *TokenManager
+	tm        *TokenManager
 	skipPaths []string
 }
 
@@ -39,9 +40,18 @@ func (a *AuthMiddleware) Handler() gin.HandlerFunc {
 			return
 		}
 
+		if a.tm.IsBlacklisted(claims.ID) {
+			response.AbortWithError(c, errors.NewDefault(errors.ErrTokenInvalid))
+			return
+		}
+
 		c.Set("user_id", claims.Subject)
 		c.Set("role", claims.Role)
 		c.Set("device_id", claims.DeviceID)
+		c.Set("jti", claims.ID)
+		if claims.ExpiresAt != nil {
+			c.Set("expires_at", claims.ExpiresAt.Time)
+		}
 		c.Next()
 	}
 }
@@ -77,4 +87,20 @@ func GetRole(c *gin.Context) string {
 		return s
 	}
 	return ""
+}
+
+func GetJTI(c *gin.Context) string {
+	jti, _ := c.Get("jti")
+	if s, ok := jti.(string); ok {
+		return s
+	}
+	return ""
+}
+
+func GetExpiresAt(c *gin.Context) time.Time {
+	exp, _ := c.Get("expires_at")
+	if t, ok := exp.(time.Time); ok {
+		return t
+	}
+	return time.Time{}
 }

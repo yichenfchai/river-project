@@ -33,3 +33,8 @@ export function getAllGarbageReports(params?: { page?: number; page_size?: numbe
 export function createQuestion(data: CreateQuestionRequest) {
   return api.post<ApiResponse<unknown>>('/admin/questions', data)
 }
+
+
+export function resetUserPassword(userId: string, password: string) {
+  return api.post(`/admin/users/${userId}/reset-password`, { password })
+}
