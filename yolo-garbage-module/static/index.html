@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>大运河守护者 — AI 垃圾分类识别</title>
+<style>
+/* ===== Reset & Base ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f5f0e8;
+  --card: #ffffff;
+  --navy: #1a2a3a;
+  --text: #2c3e50;
+  --text2: #7f8c8d;
+  --green: #4caf50;
+  --red: #f44336;
+  --orange: #ff9800;
+  --grey: #607d8b;
+  --green-light: #e8f5e9;
+  --red-light: #ffebee;
+  --orange-light: #fff3e0;
+  --grey-light: #eceff1;
+  --border: #e0d8cc;
+  --radius: 12px;
+  --shadow: 0 2px 12px rgba(0,0,0,.08);
+  --transition: 0.25s ease;
+}
+
+html { font-size: 16px; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.6;
+}
+
+/* ===== Header ===== */
+header {
+  background: linear-gradient(135deg, var(--navy) 0%, #2c3e50 100%);
+  color: #fff;
+  text-align: center;
+  padding: 20px 16px 16px;
+}
+header .logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+header .subtitle {
+  font-size: 0.85rem;
+  opacity: 0.7;
+  margin-top: 4px;
+}
+
+/* ===== Main Layout ===== */
+main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  padding: 28px 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  align-items: start;
+}
+
+/* ===== Sections ===== */
+.upload-section, .results-section {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ===== Drop Zone ===== */
+.drop-zone {
+  position: relative;
+  border: 2.5px dashed var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 260px;
+  cursor: pointer;
+  transition: all var(--transition);
+  overflow: hidden;
+  background: #fafaf7;
+}
+.drop-zone:hover, .drop-zone.drag-over {
+  border-color: var(--navy);
+  background: #f0ede5;
+}
+.drop-zone .drop-icon {
+  font-size: 3rem;
+  margin-bottom: 10px;
+}
+.drop-zone .drop-text {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.drop-zone .drop-hint {
+  font-size: 0.8rem;
+  color: var(--text2);
+  margin-top: 6px;
+}
+
+.drop-zone input[type=file] { display: none; }
+
+.preview-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+}
+
+/* ===== Buttons ===== */
+.actions {
+  display: flex;
+  gap: 12px;
+}
+.btn {
+  flex: 1;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.btn-primary {
+  background: var(--navy);
+  color: #fff;
+}
+.btn-primary:hover:not(:disabled) { background: #2c3e50; }
+.btn-primary:disabled {
+  background: #ccc;
+  color: #999;
+  cursor: not-allowed;
+}
+.btn-secondary {
+  background: #fff;
+  color: var(--navy);
+  border: 2px solid var(--navy);
+}
+.btn-secondary:hover { background: #f0ede5; }
+
+#cameraBtn { display: none; }
+
+/* ===== Loading Overlay ===== */
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,.92);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  z-index: 10;
+  gap: 14px;
+}
+.spinner {
+  width: 42px; height: 42px;
+  border: 4px solid var(--border);
+  border-top-color: var(--navy);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-overlay p { color: var(--text2); font-size: 0.95rem; }
+
+/* ===== Results Placeholder ===== */
+.results-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--text2);
+}
+.results-placeholder .placeholder-icon { font-size: 3.5rem; margin-bottom: 12px; }
+.results-placeholder p { font-size: 0.95rem; }
+.results-placeholder .placeholder-sub { font-size: 0.8rem; margin-top: 4px; opacity: 0.7; }
+
+/* ===== Results Content ===== */
+.results-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.image-wrapper {
+  position: relative;
+  width: 100%;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #f5f5f5;
+}
+.image-wrapper img, .image-wrapper canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.image-wrapper canvas {
+  position: absolute;
+  top: 0; left: 0;
+}
+
+/* ===== Detection List ===== */
+.detection-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.detection-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #fafaf7;
+  border: 1px solid var(--border);
+}
+.detection-name {
+  font-weight: 600;
+  flex: 1;
+}
+.confidence-bar {
+  flex: 2;
+  height: 8px;
+  border-radius: 4px;
+  background: #e0e0e0;
+  overflow: hidden;
+}
+.confidence-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+.confidence-text {
+  font-size: 0.85rem;
+  font-weight: 600;
+  min-width: 42px;
+  text-align: right;
+}
+
+/* Category Tags */
+.category-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.cat-可回收物 { background: var(--green-light); color: #2e7d32; }
+.cat-有害垃圾 { background: var(--red-light); color: #c62828; }
+.cat-厨余垃圾 { background: var(--orange-light); color: #e65100; }
+.cat-其他垃圾 { background: var(--grey-light); color: #37474f; }
+
+/* ===== Advice ===== */
+.advice-box {
+  background: var(--green-light);
+  border-left: 4px solid var(--green);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.advice-box .advice-header {
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #2e7d32;
+}
+.advice-box p { font-size: 0.9rem; color: #33691e; line-height: 1.7; }
+
+/* ===== Stats & Toast ===== */
+.stats-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 28px;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 600;
+  z-index: 999;
+  box-shadow: 0 4px 20px rgba(0,0,0,.2);
+  animation: fadeIn 0.3s ease;
+  max-width: 90vw;
+  text-align: center;
+}
+.toast.error { background: var(--red); }
+.toast.success { background: var(--green); }
+@keyframes fadeIn { from { opacity: 0; transform: translateX(-50%) translateY(-10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+.hidden { display: none !important; }
+
+/* ===== Footer ===== */
+footer {
+  text-align: center;
+  padding: 16px;
+  font-size: 0.78rem;
+  color: var(--text2);
+  border-top: 1px solid var(--border);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  main {
+    grid-template-columns: 1fr;
+    padding: 16px;
+    gap: 16px;
+  }
+  .upload-section, .results-section { padding: 18px; }
+  .drop-zone { min-height: 200px; }
+  #cameraBtn { display: flex; }
+  header .logo { font-size: 1.2rem; }
+  header { padding: 14px 12px 12px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== Header ===== -->
+<header>
+  <div class="logo">🌊 大运河守护者</div>
+  <div class="subtitle">AI 垃圾分类识别系统 · YOLOv8</div>
+</header>
+
+<!-- ===== Main ===== -->
+<main>
+  <!-- ===== Left Column: Upload ===== -->
+  <section class="upload-section" id="uploadSection">
+    <h3 style="font-size:1.05rem;margin-bottom:2px;">📤 上传垃圾图片</h3>
+
+    <div class="drop-zone" id="dropZone">
+      <div class="drop-icon">📸</div>
+      <p class="drop-text">点击或拖拽图片到此处</p>
+      <p class="drop-hint">支持 JPG / PNG / WebP，最大 10MB</p>
+      <input type="file" id="fileInput" accept="image/*">
+      <img id="preview" class="preview-image hidden" alt="预览">
+      <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="spinner"></div>
+        <p>AI 识别中，请稍候...</p>
+        <p style="font-size:0.78rem;color:var(--text2)">首次运行需下载模型 (~6MB)</p>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="cameraBtn" class="btn btn-secondary">📷 拍照</button>
+      <button id="uploadBtn" class="btn btn-primary" disabled>🔍 开始识别</button>
+    </div>
+    <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden>
+  </section>
+
+  <!-- ===== Right Column: Results ===== -->
+  <section class="results-section" id="resultsSection">
+    <div class="results-placeholder" id="placeholder">
+      <div class="placeholder-icon">♻️</div>
+      <p style="font-weight:600;">选择图片后点击「开始识别」</p>
+      <p class="placeholder-sub">AI 将自动检测垃圾类别并给出分类建议</p>
+    </div>
+
+    <div class="results-content hidden" id="resultsContent">
+      <h3 style="font-size:1.05rem;">📋 识别结果</h3>
+
+      <div class="image-wrapper" id="imageWrapper">
+        <img id="resultImage" alt="检测结果">
+        <canvas id="bboxCanvas"></canvas>
+      </div>
+
+      <div class="detection-list" id="detectionList"></div>
+
+      <div class="advice-box" id="adviceBox">
+        <div class="advice-header">💡 分类投放建议</div>
+        <p id="adviceText"></p>
+      </div>
+
+      <div class="stats-bar">
+        <span id="processingTime"></span>
+        <span id="modelNote"></span>
+      </div>
+
+      <button class="btn btn-secondary" onclick="resetUI()" style="width:100%;">
+        🔄 重新识别
+      </button>
+    </div>
+  </section>
+</main>
+
+<!-- ===== Footer ===== -->
+<footer>
+  <p>Grand Canal Guardian · 大运河生态与文化保护平台 · <span id="healthStatus">⏳ 检测服务状态...</span></p>
+</footer>
+
+<!-- ===== JavaScript ===== -->
+<script>
+// ===== State =====
+let selectedFile = null;
+let detectionResult = null;
+
+// ===== DOM Refs =====
+const $ = (id) => document.getElementById(id);
+const dropZone = $('dropZone');
+const fileInput = $('fileInput');
+const preview = $('preview');
+const uploadBtn = $('uploadBtn');
+const cameraBtn = $('cameraBtn');
+const cameraInput = $('cameraInput');
+const loadingOverlay = $('loadingOverlay');
+const uploadSection = $('uploadSection');
+const placeholder = $('placeholder');
+const resultsContent = $('resultsContent');
+const resultImage = $('resultImage');
+const bboxCanvas = $('bboxCanvas');
+const imageWrapper = $('imageWrapper');
+const detectionList = $('detectionList');
+const adviceText = $('adviceText');
+const processingTime = $('processingTime');
+const modelNote = $('modelNote');
+const healthStatus = $('healthStatus');
+
+// ===== Category Colors =====
+const CAT_COLORS = {
+  '可回收物': '#4caf50',
+  '有害垃圾': '#f44336',
+  '厨余垃圾': '#ff9800',
+  '其他垃圾': '#607d8b',
+};
+
+// ===== Toast =====
+function showToast(msg, type) {
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => { toast.remove(); }, 3500);
+}
+
+// ===== File Handling =====
+dropZone.addEventListener('click', () => fileInput.click());
+
+dropZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropZone.classList.add('drag-over');
+});
+dropZone.addEventListener('dragleave', () => {
+  dropZone.classList.remove('drag-over');
+});
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFileSelect(file);
+});
+
+fileInput.addEventListener('change', () => {
+  if (fileInput.files.length > 0) handleFileSelect(fileInput.files[0]);
+});
+
+cameraBtn.addEventListener('click', () => cameraInput.click());
+cameraInput.addEventListener('change', () => {
+  if (cameraInput.files.length > 0) handleFileSelect(cameraInput.files[0]);
+});
+
+function handleFileSelect(file) {
+  if (!file.type.match(/^image\/(jpeg|png|webp)$/)) {
+    showToast('不支持的图片格式，请选择 JPG、PNG 或 WebP。', 'error');
+    return;
+  }
+  selectedFile = file;
+  uploadBtn.disabled = false;
+
+  // Show preview
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    preview.src = e.target.result;
+    preview.classList.remove('hidden');
+  };
+  reader.readAsDataURL(file);
+
+  // Hide previous results
+  placeholder.classList.remove('hidden');
+  resultsContent.classList.add('hidden');
+  detectionResult = null;
+}
+
+// ===== Submit =====
+uploadBtn.addEventListener('click', submitClassification);
+
+async function submitClassification() {
+  if (!selectedFile) return;
+
+  // Show loading
+  loadingOverlay.classList.remove('hidden');
+  uploadBtn.disabled = true;
+
+  const formData = new FormData();
+  formData.append('image', selectedFile);
+
+  try {
+    const response = await fetch('/api/v1/vision/classify', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.detail || `识别失败 (HTTP ${response.status})`);
+    }
+
+    detectionResult = data;
+    showResults(data);
+  } catch (err) {
+    if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
+      showToast('网络连接失败，请确认服务已启动 (python app.py)。', 'error');
+    } else {
+      showToast(err.message, 'error');
+    }
+  } finally {
+    loadingOverlay.classList.add('hidden');
+    uploadBtn.disabled = false;
+  }
+}
+
+// ===== Display Results =====
+function showResults(data) {
+  placeholder.classList.add('hidden');
+  resultsContent.classList.remove('hidden');
+
+  // Display image with bounding boxes
+  const imageUrl = URL.createObjectURL(selectedFile);
+  resultImage.onload = () => drawBoundingBoxes(data.detections);
+  resultImage.src = imageUrl;
+
+  // Detection list
+  detectionList.innerHTML = '';
+  if (data.detections.length === 0) {
+    detectionList.innerHTML = `
+      <div style="text-align:center;padding:20px;color:var(--text2);">
+        <p style="font-size:2rem;">🔍</p>
+        <p>未检测到垃圾类别</p>
+        <p style="font-size:0.8rem;">请尝试更换图片，确保画面清晰、光线充足</p>
+      </div>`;
+  } else {
+    data.detections.forEach((d) => {
+      const confidencePct = (d.confidence * 100).toFixed(0);
+      const color = CAT_COLORS[d.category] || '#607d8b';
+      const barColor = confidencePct > 70 ? color : (confidencePct > 40 ? '#ff9800' : '#f44336');
+
+      const item = document.createElement('div');
+      item.className = 'detection-item';
+      item.innerHTML = `
+        <span class="detection-name">${d.class_name}</span>
+        <span class="category-tag cat-${d.category}">${d.category}</span>
+        <div class="confidence-bar">
+          <div class="confidence-bar-fill" style="width:${confidencePct}%;background:${barColor};"></div>
+        </div>
+        <span class="confidence-text">${confidencePct}%</span>
+      `;
+      detectionList.appendChild(item);
+    });
+  }
+
+  // Advice
+  adviceText.textContent = data.advice;
+
+  // Stats
+  processingTime.textContent = `⏱ 处理耗时: ${data.processing_time_ms}ms`;
+  modelNote.textContent = data.detections.length > 0
+    ? `共检测到 ${data.detections.length} 个目标`
+    : '无检测结果';
+}
+
+// ===== Bounding Box Drawing =====
+function drawBoundingBoxes(detections) {
+  const img = resultImage;
+  const canvas = bboxCanvas;
+
+  // Wait for CSS layout to settle
+  requestAnimationFrame(() => {
+    const displayW = img.clientWidth;
+    const displayH = img.clientHeight;
+    const naturalW = img.naturalWidth;
+    const naturalH = img.naturalHeight;
+
+    canvas.width = naturalW;
+    canvas.height = naturalH;
+    canvas.style.width = displayW + 'px';
+    canvas.style.height = displayH + 'px';
+
+    const scaleX = displayW / naturalW;
+    const scaleY = displayH / naturalH;
+
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, naturalW, naturalH);
+
+    detections.forEach((d) => {
+      const { x, y, w, h } = d.bbox;
+      const color = CAT_COLORS[d.category] || '#607d8b';
+      const label = `${d.class_name} ${(d.confidence * 100).toFixed(0)}%`;
+
+      // Line width scaled for natural coords
+      const lw = Math.max(2, Math.min(naturalW, naturalH) / 200);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lw;
+      ctx.strokeRect(x, y, w, h);
+
+      // Label
+      const fontSize = Math.max(10, Math.min(naturalW, naturalH) / 40);
+      ctx.font = `bold ${fontSize}px -apple-system, "Noto Sans SC", sans-serif`;
+      const metrics = ctx.measureText(label);
+      const textW = metrics.width;
+      const textH = fontSize * 1.4;
+      const labelY = y - textH - 2;
+      const drawLabelY = labelY > 0 ? labelY : y + 2;
+
+      ctx.fillStyle = color;
+      ctx.fillRect(x - lw / 2, drawLabelY, textW + 8, textH + 4);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(label, x + 2, drawLabelY + textH - 2);
+    });
+  });
+}
+
+// Handle window resize for canvas
+window.addEventListener('resize', () => {
+  if (detectionResult && detectionResult.detections.length > 0) {
+    drawBoundingBoxes(detectionResult.detections);
+  }
+});
+
+// ===== Reset =====
+function resetUI() {
+  placeholder.classList.remove('hidden');
+  resultsContent.classList.add('hidden');
+  preview.classList.add('hidden');
+  preview.src = '';
+  resultImage.src = '';
+  detectionResult = null;
+  selectedFile = null;
+  fileInput.value = '';
+  cameraInput.value = '';
+  uploadBtn.disabled = true;
+  detectionList.innerHTML = '';
+}
+
+// ===== Health Check =====
+async function checkHealth() {
+  try {
+    const res = await fetch('/api/v1/vision/health');
+    const data = await res.json();
+    if (data.status === 'healthy' && data.model_loaded) {
+      healthStatus.innerHTML = '✅ 服务正常';
+      healthStatus.style.color = '#4caf50';
+    } else if (data.status === 'healthy') {
+      healthStatus.innerHTML = '⏳ 模型加载中...';
+      healthStatus.style.color = '#ff9800';
+    } else {
+      healthStatus.innerHTML = '⚠️ 服务异常';
+      healthStatus.style.color = '#f44336';
+    }
+  } catch {
+    healthStatus.innerHTML = '❌ 无法连接服务';
+    healthStatus.style.color = '#f44336';
+  }
+}
+
+checkHealth();
+setInterval(checkHealth, 30000);
+</script>
+</body>
+</html>

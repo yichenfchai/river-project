@@ -150,6 +150,12 @@ onMounted(() => fetchUsers())
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
+@media (max-width: 768px) {
+  .table-wrap {
+    overflow-x: auto;
+  }
+}
+
 .pagination-wrap {
   margin-top: 20px;
   display: flex;

@@ -260,19 +260,19 @@ onUnmounted(() => {
 }
 
 .map-header {
-  padding: 16px 24px 8px;
-  background: #fff;
-  border-bottom: 1px solid #e4e7ed;
+  padding: 14px 24px 10px;
+  background: var(--surface-card);
+  border-bottom: 1px solid var(--border-hairline);
 }
-
 .map-header h2 {
+  font-family: 'Noto Serif SC', 'STSong', serif;
   margin: 0 0 4px;
   font-size: 20px;
+  color: var(--text-primary);
 }
-
 .page-desc {
   margin: 0;
-  color: #909399;
+  color: var(--text-secondary);
   font-size: 13px;
 }
 
@@ -285,8 +285,8 @@ onUnmounted(() => {
 .map-sidebar {
   width: 300px;
   overflow-y: auto;
-  background: #fff;
-  border-right: 1px solid #e4e7ed;
+  background: var(--surface-card);
+  border-right: 1px solid var(--border-hairline);
   display: flex;
   flex-direction: column;
 }
