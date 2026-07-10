@@ -55,12 +55,13 @@ function openStory(id: string) {
 }
 
 .story-page h2 {
+  font-family: 'Noto Serif SC', 'STSong', serif;
   font-size: 22px;
-  color: #303133;
+  color: var(--text-primary);
 }
 
 .page-desc {
-  color: #909399;
+  color: var(--text-secondary);
   font-size: 14px;
   margin-bottom: 24px;
 }
@@ -73,16 +74,17 @@ function openStory(id: string) {
 
 .story-card {
   display: flex;
-  background: #fff;
-  border-radius: 12px;
+  background: var(--surface-card);
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-hairline);
   cursor: pointer;
-  transition: box-shadow 0.2s;
+  transition: box-shadow 0.25s, transform 0.25s;
 }
-
 .story-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
 .story-cover {
@@ -92,7 +94,7 @@ function openStory(id: string) {
   align-items: center;
   justify-content: center;
   font-size: 48px;
-  background: #fff;
+  background: var(--paper-light);
   flex-shrink: 0;
 }
 
@@ -103,20 +105,21 @@ function openStory(id: string) {
 
 .story-tag {
   font-size: 11px;
-  padding: 2px 8px;
-  background: #eae7e0;
-  color: #2c3e50;
-  border-radius: 4px;
+  padding: 3px 10px;
+  background: var(--paper-light);
+  color: var(--ink-primary);
+  border-radius: var(--radius-xs);
+  font-weight: 500;
 }
 
 .story-info h3 {
   margin: 8px 0;
   font-size: 16px;
-  color: #303133;
+  color: var(--text-primary);
 }
 
 .story-info p {
-  color: #909399;
+  color: var(--text-secondary);
   font-size: 13px;
   line-height: 1.6;
   margin: 0;
@@ -127,12 +130,12 @@ function openStory(id: string) {
   display: flex;
   gap: 16px;
   font-size: 12px;
-  color: #c0c4cc;
+  color: var(--text-muted);
 }
 
 .empty-hint {
   text-align: center;
-  color: #c0c4cc;
+  color: var(--text-muted);
   padding: 40px 0;
   grid-column: 1 / -1;
 }

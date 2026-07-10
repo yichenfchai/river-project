@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { ElMenu, ElMenuItem, ElDropdown, ElDropdownMenu, ElDropdownItem, ElIcon, ElDrawer } from 'element-plus'
 import { HomeFilled, MapLocation, Reading, ChatLineSquare, TrophyBase, Present, ArrowDown, Expand, Fold } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
+import MobileTabBar from '@/components/MobileTabBar.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -139,6 +140,9 @@ function goToWorkbench() {
     <footer class="user-footer">
       <span>&copy; 2026 大运河生态与文化保护平台 — Grand Canal Guardian</span>
     </footer>
+
+    <!-- 移动端底部 Tab 栏 -->
+    <MobileTabBar />
   </div>
 </template>
 
@@ -155,13 +159,23 @@ function goToWorkbench() {
   justify-content: space-between;
   padding: 0 24px;
   height: 60px;
-  background: #2c3e50;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(180deg, #2c3e50 0%, #243445 100%);
+  border-bottom: 1px solid rgba(201, 184, 150, 0.12);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.2);
   position: sticky;
   top: 0;
   z-index: 100;
   transition: background 0.3s, box-shadow 0.3s;
+}
+.user-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(201,184,150,0.3) 30%, rgba(201,184,150,0.3) 70%, transparent);
+  opacity: 0.6;
 }
 
 .user-header :deep(.el-menu) {
@@ -185,15 +199,17 @@ function goToWorkbench() {
 }
 
 .header-left .logo {
-  font-size: 16px;
+  font-family: 'Noto Serif SC', 'STSong', serif;
+  font-size: 17px;
   font-weight: 600;
-  color: #e0d6c0;
+  color: var(--gold-light);
   cursor: pointer;
   white-space: nowrap;
+  letter-spacing: 1.5px;
+  transition: color 0.25s;
 }
-
 .header-left .logo:hover {
-  color: #c9b896;
+  color: #fff;
 }
 
 .header-center {
@@ -249,14 +265,17 @@ function goToWorkbench() {
 }
 
 .user-header.home-overlay.scrolled {
-  background: rgba(44, 62, 80, 0.92);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.2);
+  background: rgba(36, 52, 69, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(201, 184, 150, 0.12);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
 }
-
+.user-header.home-overlay.scrolled::after {
+  opacity: 0.8;
+}
 .user-header.home-overlay.scrolled .logo {
-  color: #e0d6c0;
+  color: var(--gold-light);
   text-shadow: none;
 }
 
@@ -319,22 +338,27 @@ function goToWorkbench() {
 .user-footer {
   text-align: center;
   padding: 16px;
-  color: #889099;
+  color: rgba(255,255,255,0.5);
   font-size: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  background: #2c3e50;
+  background: linear-gradient(180deg, #243445 0%, #1a1a2e 100%);
+  border-top: 1px solid rgba(201, 184, 150, 0.1);
+  letter-spacing: 0.5px;
 }
 
 /* ─── Mobile ─── */
-.hamburger { display:none;color:rgba(255,255,255,0.8);cursor:pointer;margin-right:6px }
+.hamburger { display:none;color:rgba(255,255,255,0.8);cursor:pointer;margin-right:6px;padding:8px;min-width:44px;min-height:44px;border-radius:6px }
 .hamburger:hover { color:#c9b896 }
 
-.mobile-nav { padding:12px 0 }
+.mobile-nav { padding: 8px 0 }
 .mobile-nav-item {
-  display:flex;align-items:center;gap:12px;padding:14px 20px;
-  font-size:15px;color:#303133;cursor:pointer;transition:background .2s;border-radius:0
+  display:flex;align-items:center;gap:14px;padding:14px 24px;
+  font-size:15px;color:var(--text-primary);cursor:pointer;transition:all .2s;
+  border-left: 3px solid transparent;
+  margin: 2px 8px;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
 }
-.mobile-nav-item:hover { background:#f5f3ef;color:#2c3e50 }
+.mobile-nav-item:hover { background: var(--paper-light);color: var(--ink-primary);border-left-color: var(--gold) }
+.mobile-nav-item:active { background: var(--gold-pale) }
 
 @media (max-width: 768px) {
   .hamburger { display:inline-flex }
@@ -342,7 +366,8 @@ function goToWorkbench() {
   .header-right .username { display:none }
   .user-header { padding:0 12px }
   .logo { font-size:14px }
-  .user-main { padding:12px 8px }
+  .user-main { padding:12px 8px; padding-bottom:calc(72px + env(safe-area-inset-bottom, 0)) }
+  .user-footer { padding-bottom:calc(72px + env(safe-area-inset-bottom, 0)) }
 }
 
 @media (max-width: 480px) {

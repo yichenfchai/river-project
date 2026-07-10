@@ -86,6 +86,12 @@ onMounted(() => fetchReports())
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
+@media (max-width: 768px) {
+  .table-wrap {
+    overflow-x: auto;
+  }
+}
+
 .detection-info {
   display: flex;
   align-items: center;
