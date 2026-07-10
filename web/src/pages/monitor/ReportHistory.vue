@@ -159,6 +159,12 @@ onMounted(loadReports)
   overflow: hidden;
 }
 
+@media (max-width: 768px) {
+  .table-wrap {
+    overflow-x: auto;
+  }
+}
+
 .pagination-wrap {
   display: flex;
   justify-content: center;

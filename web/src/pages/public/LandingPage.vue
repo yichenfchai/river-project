@@ -227,6 +227,14 @@ onMounted(async () => {
 @keyframes lanternFloat { 0%{transform:translateY(100vh) translateX(0);opacity:0} 20%{opacity:0.4} 80%{opacity:0.3} 100%{transform:translateY(-10vh) translateX(30px);opacity:0} }
 @keyframes cardReveal { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
 
+/* ─── Landscape phone ─── */
+@media (max-height: 500px) {
+  .landing { padding-top: 40px; justify-content: flex-start }
+  .city-card { max-height: 28vh; padding: 14px }
+  .card-header { margin-bottom: 14px }
+  .enter-wrap { margin-top: 0 }
+}
+
 /* ─── Mobile ─── */
 @media (max-width: 480px) {
   .landing { padding:12px;justify-content:flex-start;padding-top:10vh }

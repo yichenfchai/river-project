@@ -73,56 +73,55 @@ onMounted(async () => {
 }
 
 .admin-dashboard h2 {
+  font-family: 'Noto Serif SC', 'STSong', serif;
   font-size: 22px;
-  color: #303133;
+  color: var(--text-primary);
   margin: 0 0 20px;
 }
 
-.stat-grid {
-  margin-bottom: 16px;
-}
+.stat-grid { margin-bottom: 16px; }
 
 .stat-card {
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
 }
-
-.stat-card:hover {
-  transform: translateY(-2px);
-}
+.stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
 
 .stat-card :deep(.el-card__body) {
   display: flex;
   align-items: center;
   gap: 14px;
   padding: 20px;
+  background: var(--surface-card);
 }
 
 .stat-icon {
   width: 48px;
   height: 48px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
   flex-shrink: 0;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
 }
 
-.stat-body {
-  display: flex;
-  flex-direction: column;
-}
+.stat-body { display: flex; flex-direction: column; }
 
 .stat-value {
   font-size: 24px;
   font-weight: 700;
-  color: #303133;
+  color: var(--text-primary);
+  font-family: 'Georgia', 'Noto Serif SC', serif;
 }
 
 .stat-label {
   font-size: 12px;
-  color: #909399;
+  color: var(--text-secondary);
   margin-top: 2px;
 }
 

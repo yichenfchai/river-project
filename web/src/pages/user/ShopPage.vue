@@ -195,12 +195,13 @@ onMounted(fetchItems)
 }
 
 .shop-header h2 {
+  font-family: 'Noto Serif SC', 'STSong', serif;
   margin: 0;
   font-size: 22px;
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #303133;
+  color: var(--text-primary);
 }
 
 .header-actions {
@@ -214,26 +215,26 @@ onMounted(fetchItems)
   align-items: center;
   gap: 4px;
   font-size: 14px;
-  color: #606266;
+  color: var(--text-secondary);
 }
 
 .my-points strong {
-  color: #e6a23c;
+  color: var(--gold-dark);
   font-size: 16px;
 }
 
 .shop-desc {
-  color: #909399;
+  color: var(--text-secondary);
   font-size: 14px;
   margin: 0 0 24px;
 }
 
 .guest-tip {
   background: #fdf6ec;
-  border: 1px solid #faecd8;
-  border-radius: 8px;
+  border: 1px solid rgba(201,184,150,0.3);
+  border-radius: var(--radius-md);
   padding: 12px 20px;
-  color: #e6a23c;
+  color: var(--gold-dark);
   font-size: 14px;
   margin-bottom: 20px;
 }
@@ -245,13 +246,15 @@ onMounted(fetchItems)
 }
 
 .shop-item :deep(.el-card) {
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.25s, box-shadow 0.25s;
+  border: 1px solid var(--border-hairline);
 }
 
 .shop-item :deep(.el-card:hover) {
   transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
 }
 
 .item-body {
@@ -267,12 +270,12 @@ onMounted(fetchItems)
 .item-name {
   margin: 0 0 8px;
   font-size: 15px;
-  color: #303133;
+  color: var(--text-primary);
 }
 
 .item-desc {
   font-size: 12px;
-  color: #909399;
+  color: var(--text-secondary);
   margin: 0 0 16px;
   line-height: 1.5;
   min-height: 36px;
@@ -336,11 +339,34 @@ onMounted(fetchItems)
   .shop-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  .shop-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .shop-header h2 {
+    font-size: 18px;
+  }
 }
 
 @media (max-width: 480px) {
   .shop-grid {
     grid-template-columns: 1fr;
+  }
+
+  .shop-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .my-points {
+    font-size: 13px;
   }
 }
 </style>

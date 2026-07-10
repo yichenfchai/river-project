@@ -48,6 +48,13 @@ function nextSlide() {
   setTimeout(() => { isTransitioning.value = false }, 800)
 }
 
+function prevSlide() {
+  if (isTransitioning.value) return
+  isTransitioning.value = true
+  currentSlide.value = (currentSlide.value - 1 + slides.length) % slides.length
+  setTimeout(() => { isTransitioning.value = false }, 800)
+}
+
 function goToSlide(index: number) {
   if (isTransitioning.value || index === currentSlide.value) return
   isTransitioning.value = true
@@ -64,6 +71,26 @@ function stopAutoPlay() {
   if (autoPlayTimer) {
     clearInterval(autoPlayTimer)
     autoPlayTimer = null
+  }
+}
+
+/* ---- Swipe gesture support (mobile) ---- */
+let touchStartX = 0
+let touchStartY = 0
+
+function onTouchStart(e: TouchEvent) {
+  touchStartX = e.touches[0]!.clientX
+  touchStartY = e.touches[0]!.clientY
+}
+
+function onTouchEnd(e: TouchEvent) {
+  const dx = e.changedTouches[0]!.clientX - touchStartX
+  const dy = e.changedTouches[0]!.clientY - touchStartY
+
+  // Only react to horizontal swipes (>30px and more horizontal than vertical)
+  if (Math.abs(dx) > 30 && Math.abs(dx) > Math.abs(dy)) {
+    if (dx < 0) nextSlide()
+    else prevSlide()
   }
 }
 
@@ -175,7 +202,13 @@ const news = [
 <template>
   <div ref="homeRef" class="home-page">
     <!-- ====== Banner Carousel ====== -->
-    <section class="banner-section" @mouseenter="stopAutoPlay" @mouseleave="startAutoPlay">
+    <section
+      class="banner-section"
+      @mouseenter="stopAutoPlay"
+      @mouseleave="startAutoPlay"
+      @touchstart.passive="onTouchStart"
+      @touchend.passive="onTouchEnd"
+    >
       <div class="banner-slides">
         <div
           v-for="(slide, i) in slides"
@@ -535,8 +568,11 @@ const news = [
 }
 
 .dot {
-  width: 16px;
-  height: 16px;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   opacity: 0.5;
   transition: opacity 0.3s;
@@ -547,8 +583,8 @@ const news = [
 }
 
 .dot svg {
-  width: 100%;
-  height: 100%;
+  width: 14px;
+  height: 14px;
 }
 
 .dot-circle {
@@ -620,19 +656,31 @@ const news = [
 
 .news-left {
   flex: 1.2;
-  background: #fff;
-  border-radius: 12px;
+  background: var(--surface-card);
+  border-radius: var(--radius-lg);
   padding: 32px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-hairline);
 }
 
 .section-title {
+  font-family: 'Noto Serif SC', 'STSong', serif;
   font-size: 20px;
-  color: #2c3e50;
+  color: var(--ink-primary);
   margin: 0 0 20px;
   padding-bottom: 12px;
-  border-bottom: 2px solid #2c3e50;
+  border-bottom: 2px solid var(--gold);
   display: inline-block;
+  position: relative;
+}
+.section-title::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 40%;
+  height: 2px;
+  background: var(--ink-primary);
 }
 
 .news-list {
@@ -753,15 +801,29 @@ const news = [
 }
 
 .section-header h2 {
+  font-family: 'Noto Serif SC', 'STSong', serif;
   font-size: 28px;
-  color: #303133;
+  color: var(--ink-primary);
   margin: 0 0 8px;
+  position: relative;
+  display: inline-block;
+}
+.section-header h2::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 48px;
+  height: 3px;
+  background: var(--gold);
+  border-radius: 2px;
 }
 
 .section-header p {
   font-size: 14px;
-  color: #909399;
-  margin: 0;
+  color: var(--text-secondary);
+  margin: 12px 0 0;
 }
 
 .cards-grid {
@@ -777,14 +839,19 @@ const news = [
 
 .feature-card {
   text-align: center;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid var(--border-hairline);
+}
+.feature-card :deep(.el-card__body) {
+  background: var(--surface-card);
 }
 
 .feature-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 8px 24px rgba(44, 62, 80, 0.12);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--gold);
 }
 
 .card-top-icon {
@@ -856,14 +923,27 @@ const news = [
 
 .exhibit-bg-1 {
   background: linear-gradient(135deg, #2c3e50, #4a6278, #6b7b6e);
+  position: relative;
 }
-
+.exhibit-bg-1::after {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 30% 40%, rgba(201,184,150,0.15) 0%, transparent 60%);
+}
 .exhibit-bg-2 {
   background: linear-gradient(135deg, #2d5a3f, #4a6278, #2c3e50);
+  position: relative;
 }
-
+.exhibit-bg-2::after {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 60% 30%, rgba(201,184,150,0.12) 0%, transparent 60%);
+}
 .exhibit-bg-3 {
   background: linear-gradient(135deg, #5a2d5a, #4a2d6a, #2d1a5a);
+  position: relative;
+}
+.exhibit-bg-3::after {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 40% 50%, rgba(201,184,150,0.12) 0%, transparent 60%);
 }
 
 .exhibit-info {
@@ -888,10 +968,11 @@ const news = [
 
 /* ====== Stats Section ====== */
 .stats-section {
-  background: #fff;
+  background: var(--surface-card);
   max-width: 100%;
   padding: 60px calc((100% - 1200px) / 2 + 24px);
   position: relative;
+  border-top: 1px solid var(--border-hairline);
 }
 
 .stats-section::before {
@@ -901,7 +982,7 @@ const news = [
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #8b7355, #2c3e50, #8b7355);
+  background: linear-gradient(90deg, var(--gold), var(--ink-primary), var(--gold));
 }
 
 .stats-inner {
