@@ -1,0 +1,40 @@
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# ===== YOLO / ML =====
+*.pt
+*.pth
+*.onnx
+*.engine
+runs/
+wandb/
+
+# ===== 数据集（绝对不要提交）=====
+**/dataset-merged/
+**/datasets/
+**/TACO/images/
+**/TACO/labels/
+**/TACO/data/
+*.csv
+*.weights
+*.pb
+*.tflite
+
+# ===== IDE / OS =====
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ===== 环境 =====
+.env
+.env.local
+*.log
