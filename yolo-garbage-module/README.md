@@ -2,56 +2,116 @@
 
 大运河生态与文化保护平台 (Grand Canal Guardian) 的独立垃圾分类识别服务。
 
-基于 **YOLOv8** 实现，与 Go 主项目完全分离，可单独运行。
+基于 **YOLOv8n** 微调，13 类细分类映射到中国国标 4 大类。与 Go 主项目解耦，可独立部署运行。
 
-## 快速开始
+## 环境
 
-### 环境要求
+| 组件 | 版本/型号 |
+|------|----------|
+| Python | 3.10+ |
+| PyTorch | 2.6+ CUDA 12.4 |
+| GPU | NVIDIA RTX 4060 8GB |
+| Conda 环境 | `yolo-gpu`（`D:\anaconda3\envs\yolo-gpu`） |
+| 推理设备 | CUDA (`DEVICE='cuda'`) |
 
-- Python 3.10+
-- pip
-
-### 安装与启动
+## 快速启动
 
 ```bash
-# 1. 进入目录
-cd yolo-garbage-module
+# 激活 conda 环境（首次使用前创建，见下方"环境配置"）
+conda activate yolo-gpu
 
-# 2. 安装依赖
+# 安装依赖
 pip install -r requirements.txt
 
-# 3. 启动服务
+# 启动服务（GPU 推理）
 python app.py
 ```
 
-服务启动后：
-- **Web UI**: http://localhost:8081
-- **API 文档**: http://localhost:8081/docs
-- **健康检查**: http://localhost:8081/api/v1/vision/health
+服务端口：
 
-### 训练自定义模型
+| 地址 | 用途 |
+|------|------|
+| `http://localhost:8081` | Web UI（上传图片测试） |
+| `http://localhost:8081/docs` | Swagger API 文档 |
+| `http://localhost:8081/api/v1/vision/health` | 健康检查 |
 
-1. 下载 TACO 数据集: `git clone git@github.com:pedropro/TACO.git`
-2. 生成 YOLO 格式标注: 运行 `convert_taco_to_yolo.py`
-3. 训练: `yolo train model=yolov8n.pt data=TACO/dataset.yaml epochs=100`
-4. 训练完成后将 `runs/detect/train/weights/best.pt` 复制到 `models/garbage-yolov8n.pt`
+### 环境配置（首次）
+
+```bash
+# 创建 conda 环境
+conda create -n yolo-gpu python=3.10 -y
+conda activate yolo-gpu
+
+# PyTorch CUDA 版（conda 镜像可能缺 nvidia 包，用 pip 走官方 CDN）
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+
+# 项目依赖
+pip install -r requirements.txt
+```
+
+## 模型
+
+| 项目 | 说明 |
+|------|------|
+| 架构 | YOLOv8n（nano，轻量版） |
+| 细分类 | 13 类（TACO 子类别） |
+| 大类映射 | 可回收物 / 有害垃圾 / 厨余垃圾 / 其他垃圾 |
+| 模型文件 | `models/garbage-yolov8n-13cls.pt` |
+
+### 13 类 → 4 大类映射
+
+```
+可回收物: 可回收塑料, 可回收玻璃, 可回收金属, 可回收纸类
+有害垃圾: 电池, 气雾罐, 铝箔药板
+厨余垃圾: 厨余垃圾
+其他垃圾: 一次性塑料品, 塑料包装膜袋, 泡沫发泡类, 复合杂项材料, 卫生日用品
+```
+
+## 训练
+
+```bash
+conda activate yolo-gpu
+
+# 训练（必须在独立进程中运行，Jupyter/VSCode 交互窗口会崩）
+python train.py
+
+# 或后台运行（Windows）
+start /min python train.py
+```
+
+训练参数（`train.py`）：
+
+| 参数 | 值 | 说明 |
+|------|-----|------|
+| `data` | `TACO/dataset-13cls.yaml` | 数据集配置 |
+| `epochs` | `100` | 训练轮数 |
+| `device` | `0` | GPU 设备编号 |
+| `workers` | `0` | Windows 下必须设为 0，否则 DataLoader 报错 |
+
+输出目录: `runs/detect/train/weights/best.pt`
+
+### 添加数据集
+
+1. 下载 TACO: `git clone https://github.com/pedropro/TACO.git`
+2. 运行 `convert_to_yolo.py` 生成 YOLO 格式标注
+3. 编写 `dataset.yaml` 指定 train/val 路径和类别列表
+4. **务必确保 `.gitignore` 已排除 `images/`、`labels/`、`*.pt` 等大文件后再 `git add`**
 
 ## API
 
-### 垃圾分类识别
+### POST /api/v1/vision/classify
 
-```http
-POST /api/v1/vision/classify
+垃圾分类识别。
+
+```
 Content-Type: multipart/form-data
 ```
 
-**请求参数：**
-
-| 字段 | 类型 | 必填 | 说明 |
+| 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| image | File | 是 | 图片文件 (jpg/png/webp, ≤10MB) |
+| `image` | File | 是 | jpg/png/webp, <=10MB |
 
-**成功响应 (200)：**
+成功响应 (200):
 
 ```json
 {
@@ -64,51 +124,25 @@ Content-Type: multipart/form-data
       "bbox": { "x": 120, "y": 80, "w": 210, "h": 350 }
     }
   ],
-  "processing_time_ms": 120,
+  "processing_time_ms": 45,
   "advice": "塑料瓶属于可回收物，请清洗后投入蓝色可回收物垃圾桶。"
 }
 ```
 
-### 健康检查
-
-```http
-GET /api/v1/vision/health
-```
-
-**响应：**
+### GET /api/v1/vision/health
 
 ```json
 {
   "status": "healthy",
   "model_loaded": true,
-  "gpu_available": false,
-  "using_fallback": true
+  "gpu_available": true,
+  "device": "cuda"
 }
 ```
 
-## 垃圾分类体系
-
-基于 TACO (Trash Annotations in Context) 数据集，60 个细分类，映射到中国垃圾分类 4 大类：
-
-| 大类 | 示例类别 | 垃圾桶颜色 |
-|------|----------|-----------|
-| 可回收物 | 塑料瓶、玻璃瓶、易拉罐、纸箱、报纸 | 🔵 蓝色 |
-| 有害垃圾 | 电池、气雾罐、铝塑药板 | 🔴 红色 |
-| 厨余垃圾 | 食物残渣 | 🟢 绿色 |
-| 其他垃圾 | 烟头、塑料袋/膜、泡沫、一次性餐具 | ⚫ 灰色 |
-
-> 完整 60 类见 model.py CLASS_NAMES
-
-## 技术方案
-
-- **模型**: YOLOv8n + TACO 60 类数据集微调训练
-- **框架**: FastAPI + uvicorn
-- **前端**: 纯 HTML/CSS/JS，零构建步骤
-- **端口**: 8081（避免与 Go 主服务 8080 冲突）
-
 ## 与主项目集成
 
-模块独立运行。需要与 Go 主项目联动时，在 Nginx 中添加反向代理：
+模块独立运行，Go 主项目通过 Nginx 反向代理接入：
 
 ```nginx
 location /api/v1/vision/ {
@@ -117,17 +151,33 @@ location /api/v1/vision/ {
 }
 ```
 
-Vue 前端无需任何修改。
+Vue 前端无需修改。
 
 ## 项目结构
 
 ```
 yolo-garbage-module/
 ├── app.py              # FastAPI 入口
-├── model.py            # YOLOv8 模型封装 + 分类映射
+├── model.py            # YOLOv8 封装 + 13类→4类映射 + 投放建议
+├── train.py            # 训练脚本
 ├── requirements.txt    # Python 依赖
+├── .gitignore          # 排除数据集图片/标注/模型权重
 ├── static/
 │   └── index.html      # Web UI
-├── models/             # 自定义模型存放目录
-└── README.md
+├── models/
+│   └── garbage-yolov8n-13cls.pt   # 训练好的权重
+├── TACO/               # 数据集（git 忽略，本地存放）
+│   ├── dataset-13cls.yaml
+│   ├── convert_to_yolo.py
+│   ├── images/
+│   └── labels/
+└── runs/               # 训练输出（git 忽略）
+    └── detect/train/weights/best.pt
 ```
+
+## Git 注意事项
+
+- `*.pt`、`*.pth` 模型权重文件已在 `.gitignore` 中排除
+- `TACO/images/`、`TACO/labels/` 数据集目录已排除
+- **提交前务必 `git status` 确认没有误加二进制大文件**
+- 如果误提交了数据集，用 `git filter-branch` 清理历史（本次事件已修复）
